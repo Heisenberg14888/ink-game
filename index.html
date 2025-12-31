@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NEXUS | INK GAME OS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700&family=Syncopate:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-main: #050505;
+            --bg-panel: rgba(20, 20, 20, 0.7);
+            --border: rgba(255, 255, 255, 0.1);
+            --text-primary: #ffffff;
+            --accent: #ffffff;
+            --accent-glow: rgba(255, 255, 255, 0.2);
+        }
+
+        [data-theme="matrix"] { --bg-main: #000000; --bg-panel: rgba(0, 20, 0, 0.8); --border: #00ff00; --text-primary: #00ff00; --accent: #00ff00; --accent-glow: rgba(0, 255, 0, 0.3); }
+        [data-theme="crimson"] { --bg-main: #0a0000; --bg-panel: rgba(30, 0, 0, 0.8); --border: #ff0000; --text-primary: #ff0000; --accent: #ff0000; --accent-glow: rgba(255, 0, 0, 0.3); }
+        [data-theme="polar"] { --bg-main: #e0e0e0; --bg-panel: rgba(255, 255, 255, 0.8); --border: rgba(0,0,0,0.1); --text-primary: #000000; --accent: #000000; --accent-glow: rgba(0,0,0,0.1); }
+
+        body { background-color: var(--bg-main); color: var(--text-primary); font-family: 'Space Grotesk', sans-serif; overflow-x: hidden; transition: all 0.5s ease; }
+        .glass-panel { background: var(--bg-panel); backdrop-filter: blur(15px); border: 1px solid var(--border); }
+        .font-tech { font-family: 'Syncopate', sans-serif; }
+        
+        .drawer {
+            position: fixed; top: 0; left: -100%; width: 100%; max-width: 400px; height: 100vh;
+            background: var(--bg-main); border-right: 1px solid var(--border);
+            z-index: 500; transition: left 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            padding: 2rem; box-shadow: 20px 0 50px rgba(0,0,0,0.8);
+        }
+        .drawer.active { left: 0; }
+
+        #admin-dashboard {
+            position: fixed; top: -120%; left: 0; width: 100%; background: var(--bg-main);
+            border-bottom: 2px solid var(--accent); z-index: 1000; transition: top 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            max-height: 100vh; overflow-y: auto;
+        }
+        #admin-dashboard.active { top: 0; }
+
+        .btn-nexus { 
+            background: var(--accent); color: var(--bg-main); font-weight: 700; 
+            letter-spacing: 2px; transition: all 0.3s; text-transform: uppercase;
+            border: 1px solid transparent;
+        }
+        .btn-nexus:hover { transform: translateY(-2px); box-shadow: 0 5px 20px var(--accent-glow); opacity: 0.9; }
+        
+        input, select, textarea { 
+            background: rgba(255,255,255,0.05) !important; border: 1px solid var(--border) !important; 
+            color: var(--text-primary) !important; outline: none; transition: all 0.3s;
+        }
+
+        .notif { pointer-events: auto; animation: slideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        @keyframes slideIn { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        
+        #overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); z-index: 400; display: none; backdrop-filter: blur(3px);
+        }
+
+        #settings-panel { right: -100%; width: 100%; max-width: 320px; }
+    </style>
+</head>
+<body class="relative min-h-screen pb-10">
+    <canvas id="snow-canvas" class="fixed top-0 left-0 w-full h-full pointer-events-none z-1"></canvas>
+    <div id="overlay" onclick="closeAllPanels()"></div>
+
+    <div id="admin-dashboard">
+        <div class="max-w-7xl mx-auto p-4 md:p-8">
+            <div class="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
+                <h2 class="text-xl md:text-2xl font-tech font-bold" style="color: var(--accent)">COMMAND CENTER</h2>
+                <button onclick="logoutAdmin()" class="text-red-500 text-[10px] md:text-xs font-bold border border-red-900 px-3 py-2 hover:bg-red-900/10">TERMINATE</button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="glass-panel p-4 md:p-6 col-span-1 md:col-span-2 space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <input type="text" id="adm-format" placeholder="ФОРМАТ (2x2)" class="p-3 text-sm">
+                        <input type="number" id="adm-max-teams" placeholder="МАКС КОМАНД" class="p-3 text-sm">
+                        <input type="text" id="adm-prize" placeholder="ПРИЗ (ROBUX)" class="p-3 text-sm">
+                    </div>
+                    <textarea id="adm-rules" placeholder="ПРАВИЛА ТУРНИРА..." class="w-full p-3 h-20 text-sm font-mono"></textarea>
+                    <button onclick="createTournamentInDB()" class="btn-nexus w-full py-3 text-sm">LAUNCH TOURNAMENT</button>
+                    <button onclick="resetDatabase()" class="w-full py-2 text-[10px] text-red-500 border border-red-500/20 mt-2">RESET ALL DATA</button>
+                </div>
+                <div class="glass-panel p-4 md:p-6 text-center flex flex-row md:flex-col justify-around items-center">
+                    <div class="text-center">
+                        <div class="text-3xl md:text-4xl font-tech mb-1" id="stat-teams">0</div>
+                        <p class="text-[9px] opacity-50 uppercase tracking-widest">SQUADS</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl md:text-4xl font-tech mb-1" id="stat-players">0</div>
+                        <p class="text-[9px] opacity-50 uppercase tracking-widest">OPERATORS</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="drawer-reg" class="drawer">
+        <div class="flex justify-between items-center mb-8">
+            <h3 class="font-tech text-lg">REGISTRATION</h3>
+            <button onclick="toggleDrawer('drawer-reg')"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="space-y-4">
+            <input type="text" id="reg-nick" placeholder="ROBLOX NICKNAME" class="w-full p-4 text-sm">
+            <input type="text" id="reg-tg" placeholder="@USER_CONTACT" class="w-full p-4 text-sm">
+            <input type="number" id="reg-wins" placeholder="WINS COUNT" class="w-full p-4 text-sm">
+            <select id="reg-device" class="w-full p-4 text-sm">
+                <option value="PC">PC / LAPTOP</option>
+                <option value="Mobile">MOBILE</option>
+                <option value="Tablet">TABLET</option>
+            </select>
+            <button onclick="handleRegistration()" class="btn-nexus w-full py-4 mt-6 text-sm">INITIALIZE IDENTITY</button>
+        </div>
+    </div>
+
+    <div id="drawer-team" class="drawer">
+        <div class="flex justify-between items-center mb-8">
+            <h3 class="font-tech text-lg">SQUAD CREATION</h3>
+            <button onclick="toggleDrawer('drawer-team')"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="space-y-6">
+            <input type="text" id="new-team-name" placeholder="ENTER UNIQUE NAME" class="w-full p-4 text-sm">
+            <button onclick="createTeamInDB()" class="btn-nexus w-full py-4 mt-4 text-sm">CONFIRM UNIT FORMATION</button>
+        </div>
+    </div>
+
+    <div id="settings-panel" class="fixed top-0 h-full bg-[#050505] border-l border-white/10 z-[600] p-6 md:p-8 transition-all duration-500 shadow-2xl">
+        <div class="flex justify-between items-center mb-10">
+            <h2 class="font-tech text-lg">SYSTEM CONFIG</h2>
+            <button onclick="toggleSettings()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="space-y-8">
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="setTheme('void')" class="p-3 border border-white/10 text-[10px]">VOID</button>
+                <button onclick="setTheme('polar')" class="p-3 bg-white text-black text-[10px]">POLAR</button>
+                <button onclick="setTheme('matrix')" class="p-3 border border-[#00ff00]/30 text-[10px] text-[#00ff00]">MATRIX</button>
+                <button onclick="setTheme('crimson')" class="p-3 border border-red-500/30 text-[10px] text-red-500">CRIMSON</button>
+            </div>
+            <div class="pt-6 border-t border-white/10">
+                <button id="snow-btn" onclick="toggleSnow()" class="text-[10px] text-green-500">SNOW: ON</button>
+                <input type="range" id="snow-speed" min="1" max="10" value="3" class="w-full accent-white mt-4">
+            </div>
+        </div>
+    </div>
+
+    <div class="relative z-10 max-w-7xl mx-auto p-4 md:p-10 pt-10" id="main-content">
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-16">
+            <div>
+                <p class="text-[8px] md:text-[10px] tracking-[0.5em] text-white/40 uppercase mb-2">Network Status: Online</p>
+                <h1 class="text-5xl md:text-7xl font-bold font-tech tracking-tighter">INK<span class="opacity-50">_OS</span></h1>
+            </div>
+            <div class="flex items-center gap-4 bg-white/5 p-3 rounded-sm w-full md:w-auto">
+                <input type="password" id="admin-code" placeholder="ACCESS KEY" class="bg-transparent border-b border-white/20 text-center text-xs py-2 w-full md:w-32">
+                <button onclick="toggleSettings()" class="text-2xl opacity-60"><i class="fas fa-cog"></i></button>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+            <div class="lg:col-span-4 space-y-6">
+                <div id="profile-card" class="glass-panel p-6 md:p-8 text-center">
+                    <button onclick="toggleDrawer('drawer-reg')" class="btn-nexus px-6 py-4 w-full text-xs">REGISTER OPERATOR</button>
+                </div>
+                <div id="nav-options" class="hidden space-y-3">
+                    <button onclick="toggleDrawer('drawer-team')" class="glass-panel w-full p-5 text-left text-[10px] font-bold hover:bg-white/10 transition-all uppercase tracking-widest">
+                        <i class="fas fa-plus-circle mr-3"></i> INITIALIZE NEW SQUAD
+                    </button>
+                </div>
+            </div>
+
+            <div class="lg:col-span-8 space-y-8">
+                <div id="tournament-card" class="glass-panel p-6 md:p-12 min-h-[300px] flex items-center justify-center relative overflow-hidden">
+                    <div class="text-center opacity-20">
+                        <i class="fas fa-broadcast-tower text-5xl mb-6 animate-pulse"></i>
+                        <p class="text-xs font-tech tracking-[0.4em] uppercase">Awaiting Broadcast...</p>
+                    </div>
+                </div>
+
+                <div id="teams-container" class="hidden">
+                    <h3 class="font-tech text-xl uppercase mb-8">Active Units</h3>
+                    <div id="teams-grid" class="grid grid-cols-1 md:grid-cols-2 gap-5"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="notification-area" class="fixed bottom-8 right-8 z-[1000] flex flex-col gap-3 w-80 pointer-events-none"></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, set, onValue, update, push, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCK7gn8Xl-AW93FTni7q7Rx1QTUw0ILiCs",
+            authDomain: "ink-game-843c1.firebaseapp.com",
+            databaseURL: "https://ink-game-843c1-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "ink-game-843c1",
+            storageBucket: "ink-game-843c1.firebasestorage.app",
+            messagingSenderId: "547943681956",
+            appId: "1:547943681956:web:aa7db2830eca6438f7fb31",
+            measurementId: "G-BPW1BM3H1N"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // --- STATE ---
+        let state = {
+            player: JSON.parse(localStorage.getItem('ink_player')) || null,
+            tournament: null,
+            teams: {},
+            snowActive: true,
+            snowSpeed: 3
+        };
+
+        // --- DATABASE LISTENERS ---
+        onValue(ref(db, 'tournament'), (snapshot) => {
+            state.tournament = snapshot.val();
+            if(state.tournament) {
+                renderTournament(state.tournament);
+                if(state.player) document.getElementById('teams-container').classList.remove('hidden');
+            }
+        });
+
+        onValue(ref(db, 'teams'), (snapshot) => {
+            state.teams = snapshot.val() || {};
+            renderTeams();
+        });
+
+        // --- GLOBAL FUNCTIONS ---
+        window.handleRegistration = function() {
+            const nick = document.getElementById('reg-nick').value;
+            const tg = document.getElementById('reg-tg').value;
+            const wins = document.getElementById('reg-wins').value;
+            const device = document.getElementById('reg-device').value;
+
+            if(!nick || !tg || !wins) return notify('ОШИБКА: ЗАПОЛНИТЕ ПОЛЯ', 'error');
+
+            state.player = { nick, tg, wins, device, id: Math.floor(Math.random() * 9000) + 1000 };
+            localStorage.setItem('ink_player', JSON.stringify(state.player));
+            
+            renderProfile();
+            closeAllPanels();
+            notify('ЛИЧНОСТЬ ИНИЦИАЛИЗИРОВАНА', 'success');
+        };
+
+        window.createTournamentInDB = function() {
+            const format = document.getElementById('adm-format').value;
+            const maxTeams = document.getElementById('adm-max-teams').value;
+            const prize = document.getElementById('adm-prize').value;
+            const rules = document.getElementById('adm-rules').value;
+
+            set(ref(db, 'tournament'), {
+                format, maxTeams, prize, rules,
+                teamSize: parseInt(format) || 2
+            }).then(() => {
+                logoutAdmin();
+                notify('ТУРНИР ОБНОВЛЕН У ВСЕХ', 'success');
+            });
+        };
+
+        window.createTeamInDB = function() {
+            const name = document.getElementById('new-team-name').value;
+            if(!name || !state.player) return notify('ОШИБКА', 'error');
+            if(Object.values(state.teams).some(t => t.leader === state.player.nick)) return notify('У ВАС УЖЕ ЕСТЬ ОТРЯД', 'error');
+
+            const teamId = "team_" + Date.now();
+            set(ref(db, 'teams/' + teamId), {
+                id: teamId,
+                name: name.toUpperCase(),
+                leader: state.player.nick,
+                members: [state.player.nick],
+                max: state.tournament?.teamSize || 2
+            }).then(() => {
+                closeAllPanels();
+                notify('ОТРЯД ЗАРЕГИСТРИРОВАН', 'success');
+            });
+        };
+
+        window.resetDatabase = function() {
+            if(confirm("УДАЛИТЬ ВСЕ ДАННЫЕ?")) {
+                remove(ref(db, '/')).then(() => location.reload());
+            }
+        };
+
+        // --- UI RENDERING ---
+        function renderProfile() {
+            if(!state.player) return;
+            document.getElementById('profile-card').innerHTML = `
+                <div class="text-left animate-fade-in">
+                    <h3 class="font-tech text-lg">${state.player.nick}</h3>
+                    <p class="text-[9px] opacity-40 mb-4 tracking-widest">ID: ${state.player.id}</p>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="bg-white/5 p-2 text-[10px]">WINS: ${state.player.wins}</div>
+                        <div class="bg-white/5 p-2 text-[10px]">${state.player.device}</div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('nav-options').classList.remove('hidden');
+        }
+
+        function renderTournament(t) {
+            document.getElementById('tournament-card').innerHTML = `
+                <div class="w-full flex flex-col md:flex-row justify-between items-center gap-6 animate-fade-in">
+                    <div class="text-center md:text-left">
+                        <div class="text-red-500 text-[10px] font-bold mb-4 animate-pulse">LIVE SIGNAL</div>
+                        <h2 class="text-6xl font-tech">${t.prize}</h2>
+                        <p class="text-[10px] tracking-widest opacity-40 uppercase mt-2">Prize Pool</p>
+                    </div>
+                    <div class="text-right border-l border-white/10 pl-8">
+                        <p class="text-2xl font-tech">${t.format}</p>
+                        <p class="text-[10px] opacity-60 font-mono mt-4 max-w-[200px]">${t.rules}</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderTeams() {
+            const grid = document.getElementById('teams-grid');
+            const teamsArr = Object.values(state.teams);
+            grid.innerHTML = teamsArr.map(t => `
+                <div class="glass-panel p-6 border-l-2 border-green-500">
+                    <h4 class="font-tech">${t.name}</h4>
+                    <p class="text-[9px] opacity-40 uppercase mb-4">Leader: ${t.leader}</p>
+                    <div class="text-[10px] opacity-60">${t.members.length}/${t.max} Operators</div>
+                </div>
+            `).join('');
+
+            document.getElementById('stat-teams').innerText = teamsArr.length;
+            document.getElementById('stat-players').innerText = teamsArr.reduce((a, b) => a + b.members.length, 0);
+        }
+
+        // Запуск при старте
+        if(state.player) renderProfile();
+    </script>
+
+    <script>
+        // Твои визуальные функции (Snow, Theme, Drawers)
+        function toggleDrawer(id) {
+            closeAllPanels();
+            document.getElementById(id).classList.add('active');
+            document.getElementById('overlay').style.display = 'block';
+        }
+        function closeAllPanels() {
+            document.querySelectorAll('.drawer').forEach(d => d.classList.remove('active'));
+            document.getElementById('settings-panel').style.right = '-100%';
+            document.getElementById('overlay').style.display = 'none';
+        }
+        function toggleSettings() {
+            document.getElementById('settings-panel').style.right = '0';
+            document.getElementById('overlay').style.display = 'block';
+        }
+        function setTheme(t) {
+            document.body.removeAttribute('data-theme');
+            if(t !== 'void') document.body.setAttribute('data-theme', t);
+        }
+        function notify(msg, type) {
+            const el = document.createElement('div');
+            el.className = `glass-panel p-4 notif border-l-4 ${type==='success'?'border-green-500':'border-red-500'} bg-black/90`;
+            el.innerHTML = `<span class="text-[10px] font-bold uppercase tracking-widest">${msg}</span>`;
+            document.getElementById('notification-area').appendChild(el);
+            setTimeout(() => el.remove(), 4000);
+        }
+
+        // Админ код
+        document.getElementById('admin-code').addEventListener('keypress', (e) => {
+            if(e.key === 'Enter' && e.target.value === '2025') {
+                document.getElementById('admin-dashboard').classList.add('active');
+                notify('ACCESS GRANTED', 'success');
+                e.target.value = '';
+            }
+        });
+        function logoutAdmin() { document.getElementById('admin-dashboard').classList.remove('active'); }
+
+        // Снег
+        const canvas = document.getElementById('snow-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        window.addEventListener('resize', resize); resize();
+        for(let i=0; i<50; i++) particles.push({x: Math.random()*canvas.width, y: Math.random()*canvas.height, v: Math.random()*1+0.5, s: Math.random()*2});
+        function animate() {
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            ctx.fillStyle = "white"; ctx.globalAlpha = 0.2;
+            particles.forEach(p => {
+                p.y += p.v; if(p.y > canvas.height) p.y = -10;
+                ctx.beginPath(); ctx.arc(p.x, p.y, p.s, 0, Math.PI*2); ctx.fill();
+            });
+            requestAnimationFrame(animate);
+        }
+        animate();
+    </script>
+</body>
+</html>
