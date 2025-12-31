@@ -30,8 +30,8 @@
             -webkit-tap-highlight-color: transparent;
         }
         
-        /* Mobile Scroll Fix */
-        body.modal-open { overflow: hidden; height: 100vh; position: fixed; width: 100%; }
+        /* Mobile Scroll Fix: Убрали position: fixed, чтобы работал скролл внутри drawer */
+        body.modal-open { overflow: hidden; }
 
         .font-tech { font-family: 'Syncopate', sans-serif; }
         .glass-panel { background: var(--bg-panel); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--border); }
@@ -40,9 +40,10 @@
             background: var(--accent); color: black; font-weight: 800; 
             letter-spacing: 1px; transition: all 0.3s; text-transform: uppercase;
             border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
-            touch-action: manipulation;
+            touch-action: manipulation; /* Улучшает реакцию на тач */
+            user-select: none;
         }
-        .btn-nexus:active { transform: scale(0.98); }
+        .btn-nexus:active { transform: scale(0.96); }
         .btn-nexus:hover { box-shadow: 0 0 30px var(--accent-glow); }
         
         .btn-danger { background: #ff3333; color: white; border: 1px solid red; }
@@ -52,7 +53,7 @@
         .btn-icon { background: rgba(255,255,255,0.1); color: white; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: 0.3s; cursor: pointer; }
         .btn-icon:hover { background: var(--accent); color: black; }
 
-        /* Mobile Input Fix (prevent zoom) */
+        /* Mobile Input Fix (prevent zoom & style) */
         input, textarea { 
             background: rgba(255,255,255,0.03) !important; 
             border: 1px solid var(--border) !important; 
@@ -61,6 +62,7 @@
             font-size: 16px !important; /* Prevents iOS zoom */
             border-radius: 0;
             appearance: none;
+            width: 100%;
         }
         input:focus, textarea:focus { outline: 1px solid var(--accent); border-color: var(--accent) !important; }
         input:disabled { opacity: 0.5; cursor: not-allowed; border-color: transparent !important; }
@@ -81,10 +83,16 @@
             background: #080808; border-left: 1px solid var(--border);
             z-index: 800; transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); 
             padding: 2rem; overflow-y: auto; -webkit-overflow-scrolling: touch;
-            /* Mobile full width override */
         }
+        /* Mobile specific styles for drawer */
         @media(max-width: 640px) {
-            .drawer { max-width: 100%; border-left: none; padding: 1.5rem; }
+            .drawer { 
+                max-width: 100%; 
+                width: 100%;
+                border-left: none; 
+                padding: 1.5rem; 
+                padding-bottom: 10rem; /* Extra space for keyboard */
+            }
         }
         .drawer.active { right: 0; transform: translateX(0); }
 
@@ -95,16 +103,15 @@
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.85); z-index: 700; display: none; backdrop-filter: blur(5px);
             -webkit-backdrop-filter: blur(5px);
+            touch-action: none; /* Prevent scroll on overlay */
         }
 
         .mode-tab { border: 1px solid var(--border); padding: 12px; cursor: pointer; font-size: 11px; text-align: center; flex: 1; user-select: none; }
         .mode-tab.active { background: white; color: black; font-weight: bold; }
         
-        /* Scrollbar Hiding for cleaner UI */
-        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: #000; }
         ::-webkit-scrollbar-thumb { background: #333; }
-        ::-webkit-scrollbar-thumb:hover { background: #555; }
     </style>
 </head>
 <body class="pb-10">
@@ -113,7 +120,7 @@
 
     <!-- Admin Panel -->
     <div id="admin-dashboard">
-        <div class="max-w-6xl mx-auto pb-20"> <!-- Added padding bottom for mobile scroll -->
+        <div class="max-w-6xl mx-auto pb-40">
             <div class="flex justify-between items-center mb-10 border-b border-white/10 pb-5 sticky top-0 bg-black z-50 pt-2">
                 <h2 class="text-2xl font-tech font-bold" data-lang="adm_title">УПРАВЛЕНИЕ</h2>
                 <button onclick="logoutAdmin()" class="px-6 py-2 border border-red-500 text-red-500 text-xs" data-lang="logout">ВЫХОД</button>
@@ -173,25 +180,19 @@
         <header class="flex justify-between items-center mb-12">
             <h1 class="text-3xl md:text-6xl font-bold font-tech tracking-tighter select-none">INK<span class="opacity-20">_OS</span></h1>
             <div class="flex items-center gap-3">
-                <!-- Admin Key Input -->
                 <input type="password" id="admin-code" placeholder="KEY" class="bg-white/5 border-none text-center text-xs w-24 !p-2 focus:w-32 transition-all">
                 <button onclick="toggleSettings()" class="w-10 h-10 glass-panel flex items-center justify-center active:scale-95 transition"><i class="fas fa-bars"></i></button>
             </div>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10">
-            <!-- Left Column: Profile -->
             <div class="lg:col-span-4 order-1 lg:order-none">
                 <div id="profile-card" class="glass-panel p-6 md:p-8"></div>
             </div>
-
-            <!-- Right Column: Tournaments Grid -->
             <div class="lg:col-span-8 space-y-6 order-2 lg:order-none">
                 <div id="tournaments-container"></div>
             </div>
         </div>
-        
-        <!-- Hall of Fame removed as requested -->
     </div>
 
     <!-- Drawer: Details -->
@@ -200,7 +201,7 @@
             <h3 class="font-tech text-xl" id="det-title" data-lang="details">ДЕТАЛИ</h3>
             <button onclick="closeAllPanels()" class="p-2"><i class="fas fa-times text-lg"></i></button>
         </div>
-        <div class="space-y-8 pb-10">
+        <div class="space-y-8 pb-40">
             <div class="grid grid-cols-2 gap-4">
                 <div class="bg-white/5 p-4 rounded"><p class="text-[9px] opacity-40 uppercase" data-lang="prize">Приз</p><p class="text-xl font-bold text-yellow-500" id="det-prize">-</p></div>
                 <div class="bg-white/5 p-4 rounded"><p class="text-[9px] opacity-40 uppercase" data-lang="format">Формат</p><p class="text-xl font-bold" id="det-format">-</p></div>
@@ -213,7 +214,6 @@
                 <p class="text-[9px] opacity-40 uppercase mb-3 flex justify-between"><span data-lang="participants">Участники</span><span id="det-count">0/0</span></p>
                 <div id="det-participants" class="space-y-2 max-h-40 overflow-y-auto pr-2"></div>
             </div>
-            <!-- Bracket inside Details -->
             <div id="det-bracket-area" class="hidden pt-4 border-t border-white/10">
                 <p class="text-[9px] opacity-40 uppercase mb-3" data-lang="bracket">СЕТКА</p>
                 <div id="det-bracket-grid" class="grid grid-cols-1 gap-2"></div>
@@ -228,7 +228,7 @@
             <h3 class="font-tech text-lg" data-lang="reg_tourn_title">РЕГИСТРАЦИЯ</h3>
             <button onclick="closeAllPanels()" class="p-2"><i class="fas fa-arrow-left"></i></button>
         </div>
-        <div id="team-action-area" class="space-y-6"></div>
+        <div id="team-action-area" class="space-y-6 pb-40"></div>
     </div>
 
     <!-- Drawer: Registration / Profile -->
@@ -237,32 +237,34 @@
             <h3 class="font-tech text-lg" id="reg-title" data-lang="create_acc">СОЗДАТЬ АККАУНТ</h3>
             <button onclick="closeAllPanels()" class="p-2"><i class="fas fa-times"></i></button>
         </div>
-        <div class="space-y-4">
-            <div class="space-y-1">
-                <label class="text-[9px] uppercase opacity-50 ml-1">Никнейм</label>
-                <input type="text" id="reg-nick" placeholder="NICKNAME" class="w-full">
+        
+        <!-- Используем FORM для поддержки нажатия Enter на клавиатуре телефона -->
+        <form onsubmit="event.preventDefault(); handleRegistration();" class="space-y-6 pb-40">
+            <div class="space-y-2">
+                <label class="text-[10px] uppercase opacity-50 ml-1 font-bold">Никнейм</label>
+                <input type="text" id="reg-nick" placeholder="NICKNAME" autocomplete="off" autocorrect="off" autocapitalize="off" enterkeyhint="next" required>
             </div>
-            <div class="space-y-1">
-                <label class="text-[9px] uppercase opacity-50 ml-1">Telegram</label>
-                <input type="text" id="reg-tg" placeholder="@USERNAME" class="w-full">
-            </div>
-            <!-- Wins are typically read-only for users, but kept editable for profile updates if needed or hidden -->
-            <div class="space-y-1 hidden" id="reg-wins-container">
-                <label class="text-[9px] uppercase opacity-50 ml-1" data-lang="wins">ПОБЕДЫ</label>
-                <input type="number" id="reg-wins" placeholder="0" class="w-full" disabled>
+            <div class="space-y-2">
+                <label class="text-[10px] uppercase opacity-50 ml-1 font-bold">Telegram</label>
+                <input type="text" id="reg-tg" placeholder="@USERNAME" autocomplete="off" autocorrect="off" autocapitalize="off" enterkeyhint="done" required>
             </div>
             
-            <button onclick="handleRegistration()" class="btn-nexus w-full py-4 mt-6" id="reg-btn" data-lang="done">ГОТОВО</button>
-        </div>
+            <div class="space-y-2 hidden" id="reg-wins-container">
+                <label class="text-[10px] uppercase opacity-50 ml-1 font-bold" data-lang="wins">ПОБЕДЫ</label>
+                <input type="number" id="reg-wins" placeholder="0" disabled>
+            </div>
+            
+            <button type="submit" class="btn-nexus w-full py-5 text-sm shadow-lg mt-8" id="reg-btn" data-lang="done">ГОТОВО</button>
+        </form>
     </div>
 
     <!-- Settings Panel -->
-    <div id="settings-panel" class="fixed top-0 right-[-100%] h-full w-full max-w-[300px] bg-black border-l border-white/10 z-[900] p-8 transition-all duration-300">
+    <div id="settings-panel" class="fixed top-0 right-[-100%] h-full w-full max-w-[300px] bg-black border-l border-white/10 z-[900] p-8 transition-all duration-300 overflow-y-auto">
         <div class="flex justify-between items-center mb-10">
             <h2 class="font-tech text-sm" data-lang="settings">НАСТРОЙКИ</h2>
             <button onclick="closeAllPanels()"><i class="fas fa-times"></i></button>
         </div>
-        <div class="space-y-6">
+        <div class="space-y-6 pb-20">
             <div class="flex gap-2">
                 <button onclick="changeLang('ru')" class="flex-1 p-2 text-xs border border-white/20 hover:bg-white hover:text-black transition">RU</button>
                 <button onclick="changeLang('en')" class="flex-1 p-2 text-xs border border-white/20 hover:bg-white hover:text-black transition">EN</button>
@@ -335,7 +337,6 @@
         onValue(ref(db, 'users'), (snap) => {
             state.allPlayers = snap.val() || {};
             renderAdminTools();
-            // Removed Hall of Fame rendering
             if(state.player && state.allPlayers[state.player.nick]) {
                 const updated = state.allPlayers[state.player.nick];
                 if(JSON.stringify(updated) !== JSON.stringify(state.player)) {
@@ -616,18 +617,15 @@
         }
 
         window.handleRegistration = async function() {
-            const nick = document.getElementById('reg-nick').value;
-            const tg = document.getElementById('reg-tg').value;
+            const nick = document.getElementById('reg-nick').value.trim();
+            const tg = document.getElementById('reg-tg').value.trim();
             const winsInput = document.getElementById('reg-wins').value; 
             if(!nick || !tg) return notify(t('fill_all_fields'), 'warning');
             
-            // If editing, use existing wins logic, if new use 0 or default
             let currentWins = 0;
             if(state.player && state.player.nick === nick) {
-                // We are editing, preserve wins or take from input if we allowed editing (which we did for convenience)
                  currentWins = parseInt(winsInput) || state.player.wins || 0;
             } else {
-                // New user check
                 const snap = await get(ref(db, 'users/' + nick));
                 if(snap.exists()) {
                     currentWins = snap.val().wins || 0;
@@ -698,14 +696,14 @@
             closeAllPanels(); 
             document.getElementById(id).classList.add('active'); 
             document.getElementById('overlay').style.display = 'block'; 
-            document.body.classList.add('modal-open'); // Lock body scroll
+            document.body.classList.add('modal-open'); 
         }
         
         function closeAllPanels() { 
             document.querySelectorAll('.drawer').forEach(d => d.classList.remove('active')); 
             document.getElementById('settings-panel').style.right = '-100%'; 
             document.getElementById('overlay').style.display = 'none'; 
-            document.body.classList.remove('modal-open'); // Unlock body scroll
+            document.body.classList.remove('modal-open'); 
         }
         
         function toggleSettings() { 
@@ -717,7 +715,6 @@
         function setTheme(t) { document.body.removeAttribute('data-theme'); if(t !== 'void') document.body.setAttribute('data-theme', t); }
         function notify(m, type) { const el = document.createElement('div'); el.className = `glass-panel p-4 text-[10px] font-bold border-l-4 ${type==='success'?'border-green-500': type==='warning'?'border-yellow-500':'border-red-500'} shadow-xl`; el.innerText = m; document.getElementById('notification-area').appendChild(el); setTimeout(() => el.remove(), 3000); }
         
-        // ADMIN PASSWORD LISTENER
         document.getElementById('admin-code').addEventListener('keypress', (e) => { 
             if(e.key === 'Enter') {
                 if (e.target.value === 'уолтер лучший') { 
@@ -745,9 +742,6 @@
         function resize() { 
             canvas.width = window.innerWidth; 
             canvas.height = window.innerHeight; 
-            // Mobile Height Fix
-            let vh = window.innerHeight * 0.01;
-            document.documentElement.style.setProperty('--vh', `${vh}px`);
         }
         window.onresize = resize; resize();
         
