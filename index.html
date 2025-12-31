@@ -2,7 +2,8 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- Отключаем масштабирование при тапе, чтобы интерфейс не дергался -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>NEXUS | INK GAME OS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -11,8 +12,8 @@
     <style>
         :root {
             --bg-main: #050505;
-            --bg-panel: rgba(15, 15, 15, 0.95);
-            --border: rgba(255, 255, 255, 0.1);
+            --bg-panel: rgba(15, 15, 15, 0.98); /* Чуть менее прозрачный для читаемости */
+            --border: rgba(255, 255, 255, 0.15);
             --accent: #ffffff;
             --accent-glow: rgba(255, 255, 255, 0.2);
             --gold: #FFD700;
@@ -28,10 +29,11 @@
             transition: all 0.4s ease; 
             overflow-x: hidden;
             -webkit-tap-highlight-color: transparent;
+            min-height: 100dvh;
         }
         
-        /* Mobile Scroll Fix: Убрали position: fixed, чтобы работал скролл внутри drawer */
-        body.modal-open { overflow: hidden; }
+        /* Блокируем скролл основного тела, когда открыто меню */
+        body.modal-open { overflow: hidden; position: fixed; width: 100%; height: 100dvh; }
 
         .font-tech { font-family: 'Syncopate', sans-serif; }
         .glass-panel { background: var(--bg-panel); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--border); }
@@ -40,78 +42,97 @@
             background: var(--accent); color: black; font-weight: 800; 
             letter-spacing: 1px; transition: all 0.3s; text-transform: uppercase;
             border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
-            touch-action: manipulation; /* Улучшает реакцию на тач */
+            touch-action: manipulation;
             user-select: none;
+            min-height: 50px; /* Увеличенная зона клика */
         }
-        .btn-nexus:active { transform: scale(0.96); }
-        .btn-nexus:hover { box-shadow: 0 0 30px var(--accent-glow); }
+        .btn-nexus:active { transform: scale(0.96); opacity: 0.8; }
         
-        .btn-danger { background: #ff3333; color: white; border: 1px solid red; }
-        .btn-secondary { background: transparent; border: 1px solid var(--border); color: white; }
-        .btn-secondary:hover { background: white; color: black; }
-        
-        .btn-icon { background: rgba(255,255,255,0.1); color: white; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: 0.3s; cursor: pointer; }
-        .btn-icon:hover { background: var(--accent); color: black; }
+        .btn-icon { background: rgba(255,255,255,0.1); color: white; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: 0.3s; cursor: pointer; }
 
-        /* Mobile Input Fix (prevent zoom & style) */
+        /* Mobile Input Fix */
         input, textarea { 
-            background: rgba(255,255,255,0.03) !important; 
+            background: rgba(255,255,255,0.05) !important; 
             border: 1px solid var(--border) !important; 
             color: white !important; 
-            padding: 14px; 
-            font-size: 16px !important; /* Prevents iOS zoom */
-            border-radius: 0;
-            appearance: none;
+            padding: 16px; /* Больше паддинг для пальца */
+            font-size: 16px !important; 
+            border-radius: 4px;
             width: 100%;
+            -webkit-appearance: none;
         }
-        input:focus, textarea:focus { outline: 1px solid var(--accent); border-color: var(--accent) !important; }
-        input:disabled { opacity: 0.5; cursor: not-allowed; border-color: transparent !important; }
+        input:focus { border-color: var(--accent) !important; outline: none; background: rgba(255,255,255,0.1) !important; }
 
-        input[type=range] { -webkit-appearance: none; padding: 0 !important; background: transparent !important; border: none !important; }
-        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; background: var(--accent); cursor: pointer; margin-top: -6px; border-radius: 50%; }
-        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: var(--border); }
-
-        #admin-dashboard {
-            position: fixed; top: -120%; left: 0; width: 100%; height: 100%; 
-            background: #000; z-index: 1000; transition: 0.6s cubic-bezier(0.23, 1, 0.32, 1);
-            padding: 20px; overflow-y: auto; -webkit-overflow-scrolling: touch;
-        }
-        #admin-dashboard.active { top: 0; }
-
+        /* DRAWER FIX - САМОЕ ВАЖНОЕ */
         .drawer {
-            position: fixed; top: 0; right: -100%; width: 100%; max-width: 450px; height: 100%;
-            background: #080808; border-left: 1px solid var(--border);
-            z-index: 800; transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); 
-            padding: 2rem; overflow-y: auto; -webkit-overflow-scrolling: touch;
+            position: fixed; 
+            top: 0; 
+            right: 0; 
+            width: 100%; 
+            max-width: 450px; 
+            height: 100dvh; /* Динамическая высота */
+            background: #080808; 
+            border-left: 1px solid var(--border);
+            z-index: 1000; /* Поверх всего */
+            transform: translateX(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            
+            /* Делаем сам drawer скроллящимся контейнером */
+            overflow-y: auto; 
+            -webkit-overflow-scrolling: touch;
+            
+            display: flex;
+            flex-direction: column;
         }
-        /* Mobile specific styles for drawer */
+
+        .drawer-content {
+            padding: 2rem;
+            padding-bottom: 150px; /* Огромный отступ снизу для клавиатуры */
+            flex-grow: 1;
+        }
+        
+        /* Mobile overrides */
         @media(max-width: 640px) {
             .drawer { 
                 max-width: 100%; 
-                width: 100%;
-                border-left: none; 
-                padding: 1.5rem; 
-                padding-bottom: 10rem; /* Extra space for keyboard */
+                border-left: none;
+            }
+            .drawer-content {
+                padding: 1.5rem;
+                padding-bottom: 50vh; /* Пол-экрана пустоты снизу, чтобы проскроллить клавиатуру */
             }
         }
-        .drawer.active { right: 0; transform: translateX(0); }
+        
+        .drawer.active { transform: translateX(0); }
 
-        .tournament-card-hover { cursor: pointer; transition: 0.3s; border: 1px solid var(--border); margin-bottom: 20px; }
-        .tournament-card-hover:active { background: rgba(255,255,255,0.05); }
+        /* Шапка drawer'а всегда сверху */
+        .drawer-header {
+            position: sticky;
+            top: 0;
+            background: #080808;
+            z-index: 10;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
         #overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85); z-index: 700; display: none; backdrop-filter: blur(5px);
+            background: rgba(0,0,0,0.85); z-index: 900; display: none; backdrop-filter: blur(5px);
             -webkit-backdrop-filter: blur(5px);
-            touch-action: none; /* Prevent scroll on overlay */
         }
 
-        .mode-tab { border: 1px solid var(--border); padding: 12px; cursor: pointer; font-size: 11px; text-align: center; flex: 1; user-select: none; }
-        .mode-tab.active { background: white; color: black; font-weight: bold; }
-        
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: #000; }
-        ::-webkit-scrollbar-thumb { background: #333; }
+        #admin-dashboard {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100dvh;
+            background: #000; z-index: 2000; 
+            transform: translateY(-100%);
+            transition: transform 0.4s ease;
+            overflow-y: auto;
+        }
+        #admin-dashboard.active { transform: translateY(0); }
     </style>
 </head>
 <body class="pb-10">
@@ -120,57 +141,46 @@
 
     <!-- Admin Panel -->
     <div id="admin-dashboard">
-        <div class="max-w-6xl mx-auto pb-40">
-            <div class="flex justify-between items-center mb-10 border-b border-white/10 pb-5 sticky top-0 bg-black z-50 pt-2">
-                <h2 class="text-2xl font-tech font-bold" data-lang="adm_title">УПРАВЛЕНИЕ</h2>
-                <button onclick="logoutAdmin()" class="px-6 py-2 border border-red-500 text-red-500 text-xs" data-lang="logout">ВЫХОД</button>
+        <div class="max-w-6xl mx-auto p-4 pb-40">
+            <div class="flex justify-between items-center mb-10 border-b border-white/10 pb-5">
+                <h2 class="text-2xl font-tech font-bold">УПРАВЛЕНИЕ</h2>
+                <button onclick="logoutAdmin()" class="px-6 py-2 border border-red-500 text-red-500 text-xs">ВЫХОД</button>
             </div>
             
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <!-- Left: Create/Edit Form -->
-                <div class="glass-panel p-6 space-y-4">
-                    <h3 class="font-tech text-sm mb-4" id="adm-form-title">СОЗДАТЬ ТУРНИР</h3>
-                    <input type="hidden" id="adm-id">
-                    
-                    <div class="flex gap-2">
-                        <div onclick="setGameMode('solo')" id="mode-solo" class="mode-tab active text-[9px]" data-lang="solo">СОЛО</div>
-                        <div onclick="setGameMode('squad')" id="mode-squad" class="mode-tab text-[9px]" data-lang="squad">ОТРЯДЫ</div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <input type="text" id="adm-format" placeholder="Format (1x1)">
-                        <input type="number" id="adm-team-size" value="1" placeholder="Team Size">
-                        <input type="text" id="adm-prize" placeholder="Prize (e.g. 500 RBX)">
-                        <input type="number" id="adm-max-players" placeholder="Max Players">
-                    </div>
-                    <textarea id="adm-rules" placeholder="Rules..." class="w-full h-24"></textarea>
-                    
-                    <div class="flex gap-2 pt-2">
-                        <button onclick="resetAdminForm()" class="btn-nexus btn-secondary py-4 flex-1">СБРОС</button>
-                        <button onclick="saveTournament()" class="btn-nexus py-4 flex-[2]" id="adm-save-btn">СОЗДАТЬ</button>
-                    </div>
+            <div class="glass-panel p-6 space-y-4">
+                <h3 class="font-tech text-sm mb-4" id="adm-form-title">СОЗДАТЬ ТУРНИР</h3>
+                <input type="hidden" id="adm-id">
+                <div class="flex gap-2 mb-4">
+                    <button onclick="setGameMode('solo')" id="mode-solo" class="flex-1 p-3 border border-white/20 text-xs">СОЛО</button>
+                    <button onclick="setGameMode('squad')" id="mode-squad" class="flex-1 p-3 border border-white/20 text-xs">ОТРЯДЫ</button>
                 </div>
-
-                <!-- Right: Tournament List & Control -->
-                <div class="space-y-6">
-                    <!-- List -->
-                    <div class="glass-panel p-6">
-                        <h3 class="font-tech text-sm mb-4">АКТИВНЫЕ ТУРНИРЫ</h3>
-                        <div id="adm-tourn-list" class="space-y-3 max-h-[250px] overflow-y-auto"></div>
-                    </div>
-
-                    <!-- Tournament Control Panel -->
-                    <div id="adm-control-panel" class="glass-panel p-6 hidden border-l-4 border-green-500">
-                        <h3 class="font-tech text-sm mb-4 text-green-500" id="adm-ctrl-title">УПРАВЛЕНИЕ МАТЧЕМ</h3>
-                        <p class="text-[10px] opacity-50 mb-4">Нажмите WINNER, чтобы начислить победы.</p>
-                        <div id="adm-team-list" class="space-y-2 max-h-[200px] overflow-y-auto"></div>
-                    </div>
+                <div class="grid grid-cols-1 gap-4">
+                    <input type="text" id="adm-format" placeholder="Формат (1x1)">
+                    <input type="number" id="adm-team-size" value="1" placeholder="Размер команды">
+                    <input type="text" id="adm-prize" placeholder="Приз">
+                    <input type="number" id="adm-max-players" placeholder="Макс. игроков">
+                </div>
+                <textarea id="adm-rules" placeholder="Правила..." class="w-full h-24 mt-4"></textarea>
+                
+                <div class="flex gap-2 pt-4">
+                    <button onclick="resetAdminForm()" class="btn-secondary p-4 flex-1">СБРОС</button>
+                    <button onclick="saveTournament()" class="btn-nexus p-4 flex-[2]" id="adm-save-btn">СОЗДАТЬ</button>
                 </div>
             </div>
+            
+            <div class="mt-8">
+                 <h3 class="font-tech text-sm mb-4">АКТИВНЫЕ ТУРНИРЫ</h3>
+                 <div id="adm-tourn-list" class="space-y-3"></div>
+            </div>
+            
+            <div id="adm-control-panel" class="hidden mt-8 p-4 border border-green-500">
+                <h3 class="text-green-500 mb-4">УПРАВЛЕНИЕ МАТЧЕМ</h3>
+                <div id="adm-team-list" class="space-y-2"></div>
+            </div>
 
-            <!-- Global Players List (Quick Edit) -->
-             <div class="glass-panel p-6 mt-6">
-                <h3 class="text-xs font-tech mb-4" data-lang="adm_players">ВСЕ ИГРОКИ (БЫСТРОЕ НАЧИСЛЕНИЕ)</h3>
-                <div id="adm-winner-selection" class="grid grid-cols-1 md:grid-cols-4 gap-2 max-h-[200px] overflow-y-auto"></div>
+            <div class="mt-8 pb-20">
+                <h3 class="text-xs font-tech mb-4">БЫСТРОЕ НАЧИСЛЕНИЕ ПОБЕД</h3>
+                <div id="adm-winner-selection" class="grid grid-cols-1 md:grid-cols-3 gap-2"></div>
             </div>
         </div>
     </div>
@@ -180,8 +190,8 @@
         <header class="flex justify-between items-center mb-12">
             <h1 class="text-3xl md:text-6xl font-bold font-tech tracking-tighter select-none">INK<span class="opacity-20">_OS</span></h1>
             <div class="flex items-center gap-3">
-                <input type="password" id="admin-code" placeholder="KEY" class="bg-white/5 border-none text-center text-xs w-24 !p-2 focus:w-32 transition-all">
-                <button onclick="toggleSettings()" class="w-10 h-10 glass-panel flex items-center justify-center active:scale-95 transition"><i class="fas fa-bars"></i></button>
+                <input type="password" id="admin-code" placeholder="KEY" class="bg-white/5 border-none text-center text-xs w-24 !p-2 focus:w-32 transition-all rounded">
+                <button onclick="toggleSettings()" class="w-12 h-12 glass-panel flex items-center justify-center active:scale-95 transition text-lg"><i class="fas fa-bars"></i></button>
             </div>
         </header>
 
@@ -195,95 +205,103 @@
         </div>
     </div>
 
+    <!-- Drawer: Registration (FIXED) -->
+    <div id="drawer-reg" class="drawer">
+        <div class="drawer-content">
+            <div class="drawer-header">
+                <h3 class="font-tech text-lg" id="reg-title" data-lang="create_acc">РЕГИСТРАЦИЯ</h3>
+                <button onclick="closeAllPanels()" class="p-4 -mr-4"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            
+            <form onsubmit="event.preventDefault(); handleRegistration();" class="flex flex-col gap-6">
+                <div>
+                    <label class="text-[10px] uppercase opacity-50 ml-1 font-bold mb-2 block">Никнейм</label>
+                    <input type="text" id="reg-nick" placeholder="Введи ник" autocomplete="off" autocorrect="off" autocapitalize="off" enterkeyhint="next">
+                </div>
+                <div>
+                    <label class="text-[10px] uppercase opacity-50 ml-1 font-bold mb-2 block">Telegram</label>
+                    <input type="text" id="reg-tg" placeholder="@username" autocomplete="off" autocorrect="off" autocapitalize="off" enterkeyhint="done">
+                </div>
+                
+                <div id="reg-wins-container" class="hidden">
+                    <label class="text-[10px] uppercase opacity-50 ml-1 font-bold mb-2 block">Победы</label>
+                    <input type="number" id="reg-wins" disabled>
+                </div>
+                
+                <button type="submit" class="btn-nexus w-full py-5 text-sm shadow-lg mt-4" id="reg-btn">ГОТОВО</button>
+                
+                <!-- Пустой блок, чтобы клавиатура не перекрыла кнопку при скролле -->
+                <div class="h-40 w-full"></div>
+            </form>
+        </div>
+    </div>
+
     <!-- Drawer: Details -->
     <div id="drawer-details" class="drawer">
-        <div class="flex justify-between items-center mb-8 sticky top-0 bg-[#080808] z-10 py-2 border-b border-white/5">
-            <h3 class="font-tech text-xl" id="det-title" data-lang="details">ДЕТАЛИ</h3>
-            <button onclick="closeAllPanels()" class="p-2"><i class="fas fa-times text-lg"></i></button>
-        </div>
-        <div class="space-y-8 pb-40">
-            <div class="grid grid-cols-2 gap-4">
-                <div class="bg-white/5 p-4 rounded"><p class="text-[9px] opacity-40 uppercase" data-lang="prize">Приз</p><p class="text-xl font-bold text-yellow-500" id="det-prize">-</p></div>
-                <div class="bg-white/5 p-4 rounded"><p class="text-[9px] opacity-40 uppercase" data-lang="format">Формат</p><p class="text-xl font-bold" id="det-format">-</p></div>
+        <div class="drawer-content">
+            <div class="drawer-header">
+                <h3 class="font-tech text-xl" id="det-title">ДЕТАЛИ</h3>
+                <button onclick="closeAllPanels()" class="p-4 -mr-4"><i class="fas fa-times text-xl"></i></button>
             </div>
-            <div>
-                <p class="text-[9px] opacity-40 uppercase mb-2" data-lang="rules">Правила</p>
-                <p class="text-xs leading-relaxed bg-white/5 p-4 rounded font-medium select-text" id="det-rules">-</p>
+            <div class="space-y-6">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-white/5 p-4 rounded"><p class="text-[9px] opacity-40 uppercase">Приз</p><p class="text-xl font-bold text-yellow-500" id="det-prize">-</p></div>
+                    <div class="bg-white/5 p-4 rounded"><p class="text-[9px] opacity-40 uppercase">Формат</p><p class="text-xl font-bold" id="det-format">-</p></div>
+                </div>
+                <div>
+                    <p class="text-[9px] opacity-40 uppercase mb-2">Правила</p>
+                    <p class="text-sm leading-relaxed bg-white/5 p-4 rounded font-medium select-text" id="det-rules">-</p>
+                </div>
+                <div>
+                    <p class="text-[9px] opacity-40 uppercase mb-3 flex justify-between"><span>Участники</span><span id="det-count">0/0</span></p>
+                    <div id="det-participants" class="space-y-2 max-h-60 overflow-y-auto pr-2 border border-white/5 p-2 rounded"></div>
+                </div>
+                <div id="det-bracket-area" class="hidden pt-4 border-t border-white/10">
+                    <p class="text-[9px] opacity-40 uppercase mb-3">СЕТКА</p>
+                    <div id="det-bracket-grid" class="grid grid-cols-1 gap-2"></div>
+                </div>
+                <div id="det-action-area" class="pt-4 sticky bottom-0 bg-[#080808] pb-4 z-20"></div>
             </div>
-            <div>
-                <p class="text-[9px] opacity-40 uppercase mb-3 flex justify-between"><span data-lang="participants">Участники</span><span id="det-count">0/0</span></p>
-                <div id="det-participants" class="space-y-2 max-h-40 overflow-y-auto pr-2"></div>
-            </div>
-            <div id="det-bracket-area" class="hidden pt-4 border-t border-white/10">
-                <p class="text-[9px] opacity-40 uppercase mb-3" data-lang="bracket">СЕТКА</p>
-                <div id="det-bracket-grid" class="grid grid-cols-1 gap-2"></div>
-            </div>
-            <div id="det-action-area" class="pt-4 sticky bottom-0 bg-[#080808] pb-4"></div>
         </div>
     </div>
 
     <!-- Drawer: Team Join -->
     <div id="drawer-team" class="drawer">
-        <div class="flex justify-between items-center mb-10 sticky top-0 bg-[#080808] z-10 py-2">
-            <h3 class="font-tech text-lg" data-lang="reg_tourn_title">РЕГИСТРАЦИЯ</h3>
-            <button onclick="closeAllPanels()" class="p-2"><i class="fas fa-arrow-left"></i></button>
+        <div class="drawer-content">
+            <div class="drawer-header">
+                <h3 class="font-tech text-lg" data-lang="reg_tourn_title">УЧАСТИЕ</h3>
+                <button onclick="closeAllPanels()" class="p-4 -mr-4"><i class="fas fa-arrow-left text-xl"></i></button>
+            </div>
+            <div id="team-action-area" class="space-y-6"></div>
         </div>
-        <div id="team-action-area" class="space-y-6 pb-40"></div>
-    </div>
-
-    <!-- Drawer: Registration / Profile -->
-    <div id="drawer-reg" class="drawer">
-        <div class="flex justify-between items-center mb-10 sticky top-0 bg-[#080808] z-10 py-2">
-            <h3 class="font-tech text-lg" id="reg-title" data-lang="create_acc">СОЗДАТЬ АККАУНТ</h3>
-            <button onclick="closeAllPanels()" class="p-2"><i class="fas fa-times"></i></button>
-        </div>
-        
-        <!-- Используем FORM для поддержки нажатия Enter на клавиатуре телефона -->
-        <form onsubmit="event.preventDefault(); handleRegistration();" class="space-y-6 pb-40">
-            <div class="space-y-2">
-                <label class="text-[10px] uppercase opacity-50 ml-1 font-bold">Никнейм</label>
-                <input type="text" id="reg-nick" placeholder="NICKNAME" autocomplete="off" autocorrect="off" autocapitalize="off" enterkeyhint="next" required>
-            </div>
-            <div class="space-y-2">
-                <label class="text-[10px] uppercase opacity-50 ml-1 font-bold">Telegram</label>
-                <input type="text" id="reg-tg" placeholder="@USERNAME" autocomplete="off" autocorrect="off" autocapitalize="off" enterkeyhint="done" required>
-            </div>
-            
-            <div class="space-y-2 hidden" id="reg-wins-container">
-                <label class="text-[10px] uppercase opacity-50 ml-1 font-bold" data-lang="wins">ПОБЕДЫ</label>
-                <input type="number" id="reg-wins" placeholder="0" disabled>
-            </div>
-            
-            <button type="submit" class="btn-nexus w-full py-5 text-sm shadow-lg mt-8" id="reg-btn" data-lang="done">ГОТОВО</button>
-        </form>
     </div>
 
     <!-- Settings Panel -->
-    <div id="settings-panel" class="fixed top-0 right-[-100%] h-full w-full max-w-[300px] bg-black border-l border-white/10 z-[900] p-8 transition-all duration-300 overflow-y-auto">
-        <div class="flex justify-between items-center mb-10">
-            <h2 class="font-tech text-sm" data-lang="settings">НАСТРОЙКИ</h2>
-            <button onclick="closeAllPanels()"><i class="fas fa-times"></i></button>
-        </div>
-        <div class="space-y-6 pb-20">
-            <div class="flex gap-2">
-                <button onclick="changeLang('ru')" class="flex-1 p-2 text-xs border border-white/20 hover:bg-white hover:text-black transition">RU</button>
-                <button onclick="changeLang('en')" class="flex-1 p-2 text-xs border border-white/20 hover:bg-white hover:text-black transition">EN</button>
+    <div id="settings-panel" class="fixed top-0 right-0 h-full w-full max-w-[300px] bg-black border-l border-white/10 z-[2000] transform translate-x-full transition-transform duration-300">
+        <div class="p-8 h-full overflow-y-auto">
+            <div class="flex justify-between items-center mb-10">
+                <h2 class="font-tech text-sm" data-lang="settings">НАСТРОЙКИ</h2>
+                <button onclick="closeAllPanels()"><i class="fas fa-times text-xl"></i></button>
             </div>
-            <div class="border-t border-white/10 pt-4 space-y-3">
-                <p class="text-[10px] opacity-50 uppercase" data-lang="snow_ctrl">Управление снегом</p>
-                <button onclick="toggleSnow()" class="w-full p-3 border border-white/10 text-xs flex justify-between"><span data-lang="snow_toggle">СНЕГ ВКЛ/ВЫКЛ</span><i class="fas fa-snowflake"></i></button>
-                <div class="pt-2"><p class="text-[9px] mb-2 opacity-50" data-lang="snow_spd">СКОРОСТЬ</p><input type="range" min="0" max="5" step="0.1" value="1" oninput="setSnowSpeed(this.value)" class="w-full"></div>
-            </div>
-            <div class="pt-4 border-t border-white/5">
-                <p class="text-[10px] opacity-50 uppercase mb-3" data-lang="theme">ТЕМА</p>
-                <button onclick="setTheme('void')" class="w-full p-3 mb-2 text-xs border border-white/10">VOID</button>
-                <button onclick="setTheme('matrix')" class="w-full p-3 mb-2 text-xs border border-green-500/30 text-green-500">MATRIX</button>
-                <button onclick="setTheme('crimson')" class="w-full p-3 text-xs border border-red-500/30 text-red-500">CRIMSON</button>
+            <div class="space-y-6 pb-20">
+                <div class="flex gap-2">
+                    <button onclick="changeLang('ru')" class="flex-1 p-3 text-xs border border-white/20">RU</button>
+                    <button onclick="changeLang('en')" class="flex-1 p-3 text-xs border border-white/20">EN</button>
+                </div>
+                <div class="border-t border-white/10 pt-4 space-y-3">
+                    <button onclick="toggleSnow()" class="w-full p-4 border border-white/10 text-xs flex justify-between items-center"><span>СНЕГ ВКЛ/ВЫКЛ</span><i class="fas fa-snowflake"></i></button>
+                </div>
+                <div class="pt-4 border-t border-white/5">
+                    <p class="text-[10px] opacity-50 uppercase mb-3">ТЕМА</p>
+                    <button onclick="setTheme('void')" class="w-full p-3 mb-2 text-xs border border-white/10">VOID</button>
+                    <button onclick="setTheme('matrix')" class="w-full p-3 mb-2 text-xs border border-green-500/30 text-green-500">MATRIX</button>
+                    <button onclick="setTheme('crimson')" class="w-full p-3 text-xs border border-red-500/30 text-red-500">CRIMSON</button>
+                </div>
             </div>
         </div>
     </div>
 
-    <div id="notification-area" class="fixed bottom-6 right-6 z-[2000] flex flex-col gap-3 pointer-events-none"></div>
+    <div id="notification-area" class="fixed top-6 right-6 z-[3000] flex flex-col gap-3 pointer-events-none w-full max-w-[300px] px-4 md:px-0 ml-auto"></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -350,8 +368,10 @@
         // --- ADMIN ---
         window.setGameMode = function(m) {
             state.gameMode = m;
-            document.getElementById('mode-solo').classList.toggle('active', m === 'solo');
-            document.getElementById('mode-squad').classList.toggle('active', m === 'squad');
+            document.getElementById('mode-solo').style.background = m === 'solo' ? 'white' : 'transparent';
+            document.getElementById('mode-solo').style.color = m === 'solo' ? 'black' : 'white';
+            document.getElementById('mode-squad').style.background = m === 'squad' ? 'white' : 'transparent';
+            document.getElementById('mode-squad').style.color = m === 'squad' ? 'black' : 'white';
             document.getElementById('adm-team-size').value = m === 'solo' ? 1 : 2;
         };
 
@@ -379,7 +399,7 @@
             document.getElementById('adm-rules').value = trn.rules;
             document.getElementById('adm-team-size').value = trn.teamSize;
             setGameMode(trn.mode);
-            document.getElementById('adm-form-title').innerText = "РЕДАКТИРОВАТЬ: " + trn.format;
+            document.getElementById('adm-form-title').innerText = "РЕДАКТИРОВАТЬ";
             document.getElementById('adm-save-btn').innerText = "СОХРАНИТЬ";
         };
 
@@ -392,7 +412,6 @@
             const trn = state.tournaments[id];
             if(!trn) return;
             document.getElementById('adm-control-panel').classList.remove('hidden');
-            document.getElementById('adm-ctrl-title').innerText = "УПРАВЛЕНИЕ: " + trn.format;
             
             const trnTeams = state.teams[id] ? Object.values(state.teams[id]) : [];
             if(trnTeams.length === 0) { 
@@ -406,7 +425,7 @@
                          <span class="text-[11px] font-bold block">${t.name}</span>
                          <span class="text-[9px] opacity-50">${t.members.map(m=>m.nick).join(', ')}</span>
                     </div>
-                    <button onclick="declareWinner('${id}', '${t.id}')" class="px-2 py-1 bg-green-500 text-black text-[9px] font-bold rounded hover:scale-105 transition">🏆 WINNER</button>
+                    <button onclick="declareWinner('${id}', '${t.id}')" class="px-2 py-1 bg-green-500 text-black text-[9px] font-bold rounded">🏆 WIN</button>
                 </div>
             `).join('');
         };
@@ -415,7 +434,7 @@
             const team = state.teams[tournId][teamId];
             if(!team) return;
 
-            if(confirm(`Объявить победителем ${team.name}? Это добавит +1 победу всем участникам.`)) {
+            if(confirm(`Победа ${team.name}?`)) {
                 for(let member of team.members) {
                     const userRef = ref(db, 'users/' + member.nick);
                     const snap = await get(userRef);
@@ -425,8 +444,8 @@
                         await set(userRef, { nick: member.nick, wins: 1, tg: '-' });
                     }
                 }
-                notify(`Победа засчитана команде ${team.name}!`, 'success');
-                if(confirm("Удалить этот турнир из списка активных?")) {
+                notify(`Победа засчитана!`, 'success');
+                if(confirm("Удалить турнир?")) {
                     await remove(ref(db, `tournaments/${tournId}`));
                     await remove(ref(db, `teams/${tournId}`));
                     resetAdminForm();
@@ -474,7 +493,7 @@
                     <div class="flex gap-2 pt-2 border-t border-white/5 mt-1">
                         <button onclick="manageTournament('${t.id}')" class="flex-1 bg-green-500/20 text-green-500 py-1 text-[9px] font-bold">УПРАВЛЕНИЕ</button>
                         <button onclick="editTournament('${t.id}')" class="bg-white/10 px-3 py-1 text-[9px]">РЕД</button>
-                        <button onclick="deleteTournament('${t.id}')" class="bg-red-500/20 text-red-500 px-3 py-1 text-[9px]">УДАЛИТЬ</button>
+                        <button onclick="deleteTournament('${t.id}')" class="bg-red-500/20 text-red-500 px-3 py-1 text-[9px]">X</button>
                     </div>
                 </div>`;
             }).join('');
@@ -523,9 +542,9 @@
             const trnTeams = state.teams[id] ? Object.values(state.teams[id]) : [];
             document.getElementById('det-count').innerText = `${trnTeams.length} / ${trn.maxPlayers}`;
             document.getElementById('det-participants').innerHTML = trnTeams.map(tm => `
-                <div class="bg-white/5 p-3 text-[11px] flex justify-between items-center border-l-2 border-white/20">
+                <div class="bg-white/5 p-3 text-[11px] flex justify-between items-center border-b border-white/5">
                     <span class="font-bold tracking-wider">${tm.name}</span>
-                    <span class="opacity-30">${tm.members.length} ${t('ppl_short')}</span>
+                    <span class="opacity-30">${tm.members.length} чел.</span>
                 </div>
             `).join('') || `<p class="text-center opacity-20 py-4 text-xs">${t('nobody_joined')}</p>`;
             const bracketArea = document.getElementById('det-bracket-area');
@@ -694,20 +713,23 @@
         
         function toggleDrawer(id) { 
             closeAllPanels(); 
-            document.getElementById(id).classList.add('active'); 
+            const el = document.getElementById(id);
+            if(el) el.classList.add('active'); 
             document.getElementById('overlay').style.display = 'block'; 
             document.body.classList.add('modal-open'); 
         }
         
         function closeAllPanels() { 
             document.querySelectorAll('.drawer').forEach(d => d.classList.remove('active')); 
-            document.getElementById('settings-panel').style.right = '-100%'; 
+            const settings = document.getElementById('settings-panel');
+            if(settings) settings.style.transform = 'translateX(100%)'; 
             document.getElementById('overlay').style.display = 'none'; 
             document.body.classList.remove('modal-open'); 
         }
         
         function toggleSettings() { 
-            document.getElementById('settings-panel').style.right = '0'; 
+            const settings = document.getElementById('settings-panel');
+            if(settings) settings.style.transform = 'translateX(0)'; 
             document.getElementById('overlay').style.display = 'block'; 
             document.body.classList.add('modal-open');
         }
@@ -750,6 +772,17 @@
         function anim() { ctx.clearRect(0,0,canvas.width,canvas.height); if(snowActive) { ctx.fillStyle = "white"; ctx.globalAlpha = 0.15; snow.forEach(p => { p.y += p.v * snowSpeedMult; if(p.y > canvas.height) { p.y = -10; p.x = Math.random() * canvas.width; } ctx.beginPath(); ctx.arc(p.x, p.y, p.s, 0, Math.PI*2); ctx.fill(); }); } requestAnimationFrame(anim); }
         anim();
         window.addEventListener('resize', initSnow);
+
+        // MOBILE KEYBOARD FIX
+        // Когда фокус на инпуте, скроллим его в центр, чтобы клавиатура не закрывала
+        const inputs = document.querySelectorAll('input');
+        inputs.forEach(input => {
+            input.addEventListener('focus', () => {
+                setTimeout(() => {
+                    input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 300); // Задержка для анимации клавиатуры
+            });
+        });
     </script>
 </body>
 </html>
