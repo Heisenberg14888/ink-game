@@ -11,387 +11,751 @@
     <style>
         :root {
             --bg-main: #050505;
-            --bg-panel: rgba(20, 20, 20, 0.7);
+            --bg-panel: rgba(15, 15, 15, 0.95);
             --border: rgba(255, 255, 255, 0.1);
-            --text-primary: #ffffff;
             --accent: #ffffff;
             --accent-glow: rgba(255, 255, 255, 0.2);
+            --gold: #FFD700;
         }
 
-        [data-theme="matrix"] { --bg-main: #000000; --bg-panel: rgba(0, 20, 0, 0.8); --border: #00ff00; --text-primary: #00ff00; --accent: #00ff00; --accent-glow: rgba(0, 255, 0, 0.3); }
-        [data-theme="crimson"] { --bg-main: #0a0000; --bg-panel: rgba(30, 0, 0, 0.8); --border: #ff0000; --text-primary: #ff0000; --accent: #ff0000; --accent-glow: rgba(255, 0, 0, 0.3); }
-        [data-theme="polar"] { --bg-main: #e0e0e0; --bg-panel: rgba(255, 255, 255, 0.8); --border: rgba(0,0,0,0.1); --text-primary: #000000; --accent: #000000; --accent-glow: rgba(0,0,0,0.1); }
+        [data-theme="matrix"] { --accent: #00ff00; --border: rgba(0, 255, 0, 0.3); }
+        [data-theme="crimson"] { --accent: #ff0000; --border: rgba(255, 0, 0, 0.3); }
 
-        body { background-color: var(--bg-main); color: var(--text-primary); font-family: 'Space Grotesk', sans-serif; overflow-x: hidden; transition: all 0.5s ease; }
-        .glass-panel { background: var(--bg-panel); backdrop-filter: blur(15px); border: 1px solid var(--border); }
-        .font-tech { font-family: 'Syncopate', sans-serif; }
+        body { 
+            background-color: var(--bg-main); 
+            color: white; 
+            font-family: 'Space Grotesk', sans-serif; 
+            transition: all 0.4s ease; 
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
         
-        .drawer {
-            position: fixed; top: 0; left: -100%; width: 100%; max-width: 400px; height: 100vh;
-            background: var(--bg-main); border-right: 1px solid var(--border);
-            z-index: 500; transition: left 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-            padding: 2rem; box-shadow: 20px 0 50px rgba(0,0,0,0.8);
+        /* Mobile Scroll Fix */
+        body.modal-open { overflow: hidden; height: 100vh; position: fixed; width: 100%; }
+
+        .font-tech { font-family: 'Syncopate', sans-serif; }
+        .glass-panel { background: var(--bg-panel); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--border); }
+        
+        .btn-nexus { 
+            background: var(--accent); color: black; font-weight: 800; 
+            letter-spacing: 1px; transition: all 0.3s; text-transform: uppercase;
+            border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+            touch-action: manipulation;
         }
-        .drawer.active { left: 0; }
+        .btn-nexus:active { transform: scale(0.98); }
+        .btn-nexus:hover { box-shadow: 0 0 30px var(--accent-glow); }
+        
+        .btn-danger { background: #ff3333; color: white; border: 1px solid red; }
+        .btn-secondary { background: transparent; border: 1px solid var(--border); color: white; }
+        .btn-secondary:hover { background: white; color: black; }
+        
+        .btn-icon { background: rgba(255,255,255,0.1); color: white; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: 0.3s; cursor: pointer; }
+        .btn-icon:hover { background: var(--accent); color: black; }
+
+        /* Mobile Input Fix (prevent zoom) */
+        input, textarea { 
+            background: rgba(255,255,255,0.03) !important; 
+            border: 1px solid var(--border) !important; 
+            color: white !important; 
+            padding: 14px; 
+            font-size: 16px !important; /* Prevents iOS zoom */
+            border-radius: 0;
+            appearance: none;
+        }
+        input:focus, textarea:focus { outline: 1px solid var(--accent); border-color: var(--accent) !important; }
+        input:disabled { opacity: 0.5; cursor: not-allowed; border-color: transparent !important; }
+
+        input[type=range] { -webkit-appearance: none; padding: 0 !important; background: transparent !important; border: none !important; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; background: var(--accent); cursor: pointer; margin-top: -6px; border-radius: 50%; }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: var(--border); }
 
         #admin-dashboard {
-            position: fixed; top: -120%; left: 0; width: 100%; background: var(--bg-main);
-            border-bottom: 2px solid var(--accent); z-index: 1000; transition: top 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-            max-height: 100vh; overflow-y: auto;
+            position: fixed; top: -120%; left: 0; width: 100%; height: 100%; 
+            background: #000; z-index: 1000; transition: 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+            padding: 20px; overflow-y: auto; -webkit-overflow-scrolling: touch;
         }
         #admin-dashboard.active { top: 0; }
 
-        .btn-nexus { 
-            background: var(--accent); color: var(--bg-main); font-weight: 700; 
-            letter-spacing: 2px; transition: all 0.3s; text-transform: uppercase;
-            border: 1px solid transparent;
+        .drawer {
+            position: fixed; top: 0; right: -100%; width: 100%; max-width: 450px; height: 100%;
+            background: #080808; border-left: 1px solid var(--border);
+            z-index: 800; transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); 
+            padding: 2rem; overflow-y: auto; -webkit-overflow-scrolling: touch;
+            /* Mobile full width override */
         }
-        .btn-nexus:hover { transform: translateY(-2px); box-shadow: 0 5px 20px var(--accent-glow); opacity: 0.9; }
-        
-        input, select, textarea { 
-            background: rgba(255,255,255,0.05) !important; border: 1px solid var(--border) !important; 
-            color: var(--text-primary) !important; outline: none; transition: all 0.3s;
+        @media(max-width: 640px) {
+            .drawer { max-width: 100%; border-left: none; padding: 1.5rem; }
         }
+        .drawer.active { right: 0; transform: translateX(0); }
 
-        .notif { pointer-events: auto; animation: slideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-        @keyframes slideIn { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        
+        .tournament-card-hover { cursor: pointer; transition: 0.3s; border: 1px solid var(--border); margin-bottom: 20px; }
+        .tournament-card-hover:active { background: rgba(255,255,255,0.05); }
+
         #overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6); z-index: 400; display: none; backdrop-filter: blur(3px);
+            background: rgba(0,0,0,0.85); z-index: 700; display: none; backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
         }
 
-        #settings-panel { right: -100%; width: 100%; max-width: 320px; }
+        .mode-tab { border: 1px solid var(--border); padding: 12px; cursor: pointer; font-size: 11px; text-align: center; flex: 1; user-select: none; }
+        .mode-tab.active { background: white; color: black; font-weight: bold; }
+        
+        /* Scrollbar Hiding for cleaner UI */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: #333; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
     </style>
 </head>
-<body class="relative min-h-screen pb-10">
-    <canvas id="snow-canvas" class="fixed top-0 left-0 w-full h-full pointer-events-none z-1"></canvas>
+<body class="pb-10">
+    <canvas id="snow-canvas" class="fixed top-0 left-0 w-full h-full pointer-events-none z-0"></canvas>
     <div id="overlay" onclick="closeAllPanels()"></div>
 
+    <!-- Admin Panel -->
     <div id="admin-dashboard">
-        <div class="max-w-7xl mx-auto p-4 md:p-8">
-            <div class="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
-                <h2 class="text-xl md:text-2xl font-tech font-bold" style="color: var(--accent)">COMMAND CENTER</h2>
-                <button onclick="logoutAdmin()" class="text-red-500 text-[10px] md:text-xs font-bold border border-red-900 px-3 py-2 hover:bg-red-900/10">TERMINATE</button>
+        <div class="max-w-6xl mx-auto pb-20"> <!-- Added padding bottom for mobile scroll -->
+            <div class="flex justify-between items-center mb-10 border-b border-white/10 pb-5 sticky top-0 bg-black z-50 pt-2">
+                <h2 class="text-2xl font-tech font-bold" data-lang="adm_title">УПРАВЛЕНИЕ</h2>
+                <button onclick="logoutAdmin()" class="px-6 py-2 border border-red-500 text-red-500 text-xs" data-lang="logout">ВЫХОД</button>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="glass-panel p-4 md:p-6 col-span-1 md:col-span-2 space-y-4">
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <input type="text" id="adm-format" placeholder="ФОРМАТ (2x2)" class="p-3 text-sm">
-                        <input type="number" id="adm-max-teams" placeholder="МАКС КОМАНД" class="p-3 text-sm">
-                        <input type="text" id="adm-prize" placeholder="ПРИЗ (ROBUX)" class="p-3 text-sm">
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Left: Create/Edit Form -->
+                <div class="glass-panel p-6 space-y-4">
+                    <h3 class="font-tech text-sm mb-4" id="adm-form-title">СОЗДАТЬ ТУРНИР</h3>
+                    <input type="hidden" id="adm-id">
+                    
+                    <div class="flex gap-2">
+                        <div onclick="setGameMode('solo')" id="mode-solo" class="mode-tab active text-[9px]" data-lang="solo">СОЛО</div>
+                        <div onclick="setGameMode('squad')" id="mode-squad" class="mode-tab text-[9px]" data-lang="squad">ОТРЯДЫ</div>
                     </div>
-                    <textarea id="adm-rules" placeholder="ПРАВИЛА ТУРНИРА..." class="w-full p-3 h-20 text-sm font-mono"></textarea>
-                    <button onclick="createTournamentInDB()" class="btn-nexus w-full py-3 text-sm">LAUNCH TOURNAMENT</button>
-                    <button onclick="resetDatabase()" class="w-full py-2 text-[10px] text-red-500 border border-red-500/20 mt-2">RESET ALL DATA</button>
+                    <div class="grid grid-cols-2 gap-4">
+                        <input type="text" id="adm-format" placeholder="Format (1x1)">
+                        <input type="number" id="adm-team-size" value="1" placeholder="Team Size">
+                        <input type="text" id="adm-prize" placeholder="Prize (e.g. 500 RBX)">
+                        <input type="number" id="adm-max-players" placeholder="Max Players">
+                    </div>
+                    <textarea id="adm-rules" placeholder="Rules..." class="w-full h-24"></textarea>
+                    
+                    <div class="flex gap-2 pt-2">
+                        <button onclick="resetAdminForm()" class="btn-nexus btn-secondary py-4 flex-1">СБРОС</button>
+                        <button onclick="saveTournament()" class="btn-nexus py-4 flex-[2]" id="adm-save-btn">СОЗДАТЬ</button>
+                    </div>
                 </div>
-                <div class="glass-panel p-4 md:p-6 text-center flex flex-row md:flex-col justify-around items-center">
-                    <div class="text-center">
-                        <div class="text-3xl md:text-4xl font-tech mb-1" id="stat-teams">0</div>
-                        <p class="text-[9px] opacity-50 uppercase tracking-widest">SQUADS</p>
+
+                <!-- Right: Tournament List & Control -->
+                <div class="space-y-6">
+                    <!-- List -->
+                    <div class="glass-panel p-6">
+                        <h3 class="font-tech text-sm mb-4">АКТИВНЫЕ ТУРНИРЫ</h3>
+                        <div id="adm-tourn-list" class="space-y-3 max-h-[250px] overflow-y-auto"></div>
                     </div>
-                    <div class="text-center">
-                        <div class="text-3xl md:text-4xl font-tech mb-1" id="stat-players">0</div>
-                        <p class="text-[9px] opacity-50 uppercase tracking-widest">OPERATORS</p>
+
+                    <!-- Tournament Control Panel -->
+                    <div id="adm-control-panel" class="glass-panel p-6 hidden border-l-4 border-green-500">
+                        <h3 class="font-tech text-sm mb-4 text-green-500" id="adm-ctrl-title">УПРАВЛЕНИЕ МАТЧЕМ</h3>
+                        <p class="text-[10px] opacity-50 mb-4">Нажмите WINNER, чтобы начислить победы.</p>
+                        <div id="adm-team-list" class="space-y-2 max-h-[200px] overflow-y-auto"></div>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <div id="drawer-reg" class="drawer">
-        <div class="flex justify-between items-center mb-8">
-            <h3 class="font-tech text-lg">REGISTRATION</h3>
-            <button onclick="toggleDrawer('drawer-reg')"><i class="fas fa-times"></i></button>
-        </div>
-        <div class="space-y-4">
-            <input type="text" id="reg-nick" placeholder="ROBLOX NICKNAME" class="w-full p-4 text-sm">
-            <input type="text" id="reg-tg" placeholder="@USER_CONTACT" class="w-full p-4 text-sm">
-            <input type="number" id="reg-wins" placeholder="WINS COUNT" class="w-full p-4 text-sm">
-            <select id="reg-device" class="w-full p-4 text-sm">
-                <option value="PC">PC / LAPTOP</option>
-                <option value="Mobile">MOBILE</option>
-                <option value="Tablet">TABLET</option>
-            </select>
-            <button onclick="handleRegistration()" class="btn-nexus w-full py-4 mt-6 text-sm">INITIALIZE IDENTITY</button>
-        </div>
-    </div>
-
-    <div id="drawer-team" class="drawer">
-        <div class="flex justify-between items-center mb-8">
-            <h3 class="font-tech text-lg">SQUAD CREATION</h3>
-            <button onclick="toggleDrawer('drawer-team')"><i class="fas fa-times"></i></button>
-        </div>
-        <div class="space-y-6">
-            <input type="text" id="new-team-name" placeholder="ENTER UNIQUE NAME" class="w-full p-4 text-sm">
-            <button onclick="createTeamInDB()" class="btn-nexus w-full py-4 mt-4 text-sm">CONFIRM UNIT FORMATION</button>
-        </div>
-    </div>
-
-    <div id="settings-panel" class="fixed top-0 h-full bg-[#050505] border-l border-white/10 z-[600] p-6 md:p-8 transition-all duration-500 shadow-2xl">
-        <div class="flex justify-between items-center mb-10">
-            <h2 class="font-tech text-lg">SYSTEM CONFIG</h2>
-            <button onclick="toggleSettings()"><i class="fas fa-times"></i></button>
-        </div>
-        <div class="space-y-8">
-            <div class="grid grid-cols-2 gap-2">
-                <button onclick="setTheme('void')" class="p-3 border border-white/10 text-[10px]">VOID</button>
-                <button onclick="setTheme('polar')" class="p-3 bg-white text-black text-[10px]">POLAR</button>
-                <button onclick="setTheme('matrix')" class="p-3 border border-[#00ff00]/30 text-[10px] text-[#00ff00]">MATRIX</button>
-                <button onclick="setTheme('crimson')" class="p-3 border border-red-500/30 text-[10px] text-red-500">CRIMSON</button>
-            </div>
-            <div class="pt-6 border-t border-white/10">
-                <button id="snow-btn" onclick="toggleSnow()" class="text-[10px] text-green-500">SNOW: ON</button>
-                <input type="range" id="snow-speed" min="1" max="10" value="3" class="w-full accent-white mt-4">
+            <!-- Global Players List (Quick Edit) -->
+             <div class="glass-panel p-6 mt-6">
+                <h3 class="text-xs font-tech mb-4" data-lang="adm_players">ВСЕ ИГРОКИ (БЫСТРОЕ НАЧИСЛЕНИЕ)</h3>
+                <div id="adm-winner-selection" class="grid grid-cols-1 md:grid-cols-4 gap-2 max-h-[200px] overflow-y-auto"></div>
             </div>
         </div>
     </div>
 
-    <div class="relative z-10 max-w-7xl mx-auto p-4 md:p-10 pt-10" id="main-content">
-        <header class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-16">
-            <div>
-                <p class="text-[8px] md:text-[10px] tracking-[0.5em] text-white/40 uppercase mb-2">Network Status: Online</p>
-                <h1 class="text-5xl md:text-7xl font-bold font-tech tracking-tighter">INK<span class="opacity-50">_OS</span></h1>
-            </div>
-            <div class="flex items-center gap-4 bg-white/5 p-3 rounded-sm w-full md:w-auto">
-                <input type="password" id="admin-code" placeholder="ACCESS KEY" class="bg-transparent border-b border-white/20 text-center text-xs py-2 w-full md:w-32">
-                <button onclick="toggleSettings()" class="text-2xl opacity-60"><i class="fas fa-cog"></i></button>
+    <!-- Main Layout -->
+    <div class="relative z-10 max-w-7xl mx-auto p-4 md:p-10">
+        <header class="flex justify-between items-center mb-12">
+            <h1 class="text-3xl md:text-6xl font-bold font-tech tracking-tighter select-none">INK<span class="opacity-20">_OS</span></h1>
+            <div class="flex items-center gap-3">
+                <!-- Admin Key Input -->
+                <input type="password" id="admin-code" placeholder="KEY" class="bg-white/5 border-none text-center text-xs w-24 !p-2 focus:w-32 transition-all">
+                <button onclick="toggleSettings()" class="w-10 h-10 glass-panel flex items-center justify-center active:scale-95 transition"><i class="fas fa-bars"></i></button>
             </div>
         </header>
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
-            <div class="lg:col-span-4 space-y-6">
-                <div id="profile-card" class="glass-panel p-6 md:p-8 text-center">
-                    <button onclick="toggleDrawer('drawer-reg')" class="btn-nexus px-6 py-4 w-full text-xs">REGISTER OPERATOR</button>
-                </div>
-                <div id="nav-options" class="hidden space-y-3">
-                    <button onclick="toggleDrawer('drawer-team')" class="glass-panel w-full p-5 text-left text-[10px] font-bold hover:bg-white/10 transition-all uppercase tracking-widest">
-                        <i class="fas fa-plus-circle mr-3"></i> INITIALIZE NEW SQUAD
-                    </button>
-                </div>
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10">
+            <!-- Left Column: Profile -->
+            <div class="lg:col-span-4 order-1 lg:order-none">
+                <div id="profile-card" class="glass-panel p-6 md:p-8"></div>
             </div>
 
-            <div class="lg:col-span-8 space-y-8">
-                <div id="tournament-card" class="glass-panel p-6 md:p-12 min-h-[300px] flex items-center justify-center relative overflow-hidden">
-                    <div class="text-center opacity-20">
-                        <i class="fas fa-broadcast-tower text-5xl mb-6 animate-pulse"></i>
-                        <p class="text-xs font-tech tracking-[0.4em] uppercase">Awaiting Broadcast...</p>
-                    </div>
-                </div>
+            <!-- Right Column: Tournaments Grid -->
+            <div class="lg:col-span-8 space-y-6 order-2 lg:order-none">
+                <div id="tournaments-container"></div>
+            </div>
+        </div>
+        
+        <!-- Hall of Fame removed as requested -->
+    </div>
 
-                <div id="teams-container" class="hidden">
-                    <h3 class="font-tech text-xl uppercase mb-8">Active Units</h3>
-                    <div id="teams-grid" class="grid grid-cols-1 md:grid-cols-2 gap-5"></div>
-                </div>
+    <!-- Drawer: Details -->
+    <div id="drawer-details" class="drawer">
+        <div class="flex justify-between items-center mb-8 sticky top-0 bg-[#080808] z-10 py-2 border-b border-white/5">
+            <h3 class="font-tech text-xl" id="det-title" data-lang="details">ДЕТАЛИ</h3>
+            <button onclick="closeAllPanels()" class="p-2"><i class="fas fa-times text-lg"></i></button>
+        </div>
+        <div class="space-y-8 pb-10">
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-white/5 p-4 rounded"><p class="text-[9px] opacity-40 uppercase" data-lang="prize">Приз</p><p class="text-xl font-bold text-yellow-500" id="det-prize">-</p></div>
+                <div class="bg-white/5 p-4 rounded"><p class="text-[9px] opacity-40 uppercase" data-lang="format">Формат</p><p class="text-xl font-bold" id="det-format">-</p></div>
+            </div>
+            <div>
+                <p class="text-[9px] opacity-40 uppercase mb-2" data-lang="rules">Правила</p>
+                <p class="text-xs leading-relaxed bg-white/5 p-4 rounded font-medium select-text" id="det-rules">-</p>
+            </div>
+            <div>
+                <p class="text-[9px] opacity-40 uppercase mb-3 flex justify-between"><span data-lang="participants">Участники</span><span id="det-count">0/0</span></p>
+                <div id="det-participants" class="space-y-2 max-h-40 overflow-y-auto pr-2"></div>
+            </div>
+            <!-- Bracket inside Details -->
+            <div id="det-bracket-area" class="hidden pt-4 border-t border-white/10">
+                <p class="text-[9px] opacity-40 uppercase mb-3" data-lang="bracket">СЕТКА</p>
+                <div id="det-bracket-grid" class="grid grid-cols-1 gap-2"></div>
+            </div>
+            <div id="det-action-area" class="pt-4 sticky bottom-0 bg-[#080808] pb-4"></div>
+        </div>
+    </div>
+
+    <!-- Drawer: Team Join -->
+    <div id="drawer-team" class="drawer">
+        <div class="flex justify-between items-center mb-10 sticky top-0 bg-[#080808] z-10 py-2">
+            <h3 class="font-tech text-lg" data-lang="reg_tourn_title">РЕГИСТРАЦИЯ</h3>
+            <button onclick="closeAllPanels()" class="p-2"><i class="fas fa-arrow-left"></i></button>
+        </div>
+        <div id="team-action-area" class="space-y-6"></div>
+    </div>
+
+    <!-- Drawer: Registration / Profile -->
+    <div id="drawer-reg" class="drawer">
+        <div class="flex justify-between items-center mb-10 sticky top-0 bg-[#080808] z-10 py-2">
+            <h3 class="font-tech text-lg" id="reg-title" data-lang="create_acc">СОЗДАТЬ АККАУНТ</h3>
+            <button onclick="closeAllPanels()" class="p-2"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="space-y-4">
+            <div class="space-y-1">
+                <label class="text-[9px] uppercase opacity-50 ml-1">Никнейм</label>
+                <input type="text" id="reg-nick" placeholder="NICKNAME" class="w-full">
+            </div>
+            <div class="space-y-1">
+                <label class="text-[9px] uppercase opacity-50 ml-1">Telegram</label>
+                <input type="text" id="reg-tg" placeholder="@USERNAME" class="w-full">
+            </div>
+            <!-- Wins are typically read-only for users, but kept editable for profile updates if needed or hidden -->
+            <div class="space-y-1 hidden" id="reg-wins-container">
+                <label class="text-[9px] uppercase opacity-50 ml-1" data-lang="wins">ПОБЕДЫ</label>
+                <input type="number" id="reg-wins" placeholder="0" class="w-full" disabled>
+            </div>
+            
+            <button onclick="handleRegistration()" class="btn-nexus w-full py-4 mt-6" id="reg-btn" data-lang="done">ГОТОВО</button>
+        </div>
+    </div>
+
+    <!-- Settings Panel -->
+    <div id="settings-panel" class="fixed top-0 right-[-100%] h-full w-full max-w-[300px] bg-black border-l border-white/10 z-[900] p-8 transition-all duration-300">
+        <div class="flex justify-between items-center mb-10">
+            <h2 class="font-tech text-sm" data-lang="settings">НАСТРОЙКИ</h2>
+            <button onclick="closeAllPanels()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="space-y-6">
+            <div class="flex gap-2">
+                <button onclick="changeLang('ru')" class="flex-1 p-2 text-xs border border-white/20 hover:bg-white hover:text-black transition">RU</button>
+                <button onclick="changeLang('en')" class="flex-1 p-2 text-xs border border-white/20 hover:bg-white hover:text-black transition">EN</button>
+            </div>
+            <div class="border-t border-white/10 pt-4 space-y-3">
+                <p class="text-[10px] opacity-50 uppercase" data-lang="snow_ctrl">Управление снегом</p>
+                <button onclick="toggleSnow()" class="w-full p-3 border border-white/10 text-xs flex justify-between"><span data-lang="snow_toggle">СНЕГ ВКЛ/ВЫКЛ</span><i class="fas fa-snowflake"></i></button>
+                <div class="pt-2"><p class="text-[9px] mb-2 opacity-50" data-lang="snow_spd">СКОРОСТЬ</p><input type="range" min="0" max="5" step="0.1" value="1" oninput="setSnowSpeed(this.value)" class="w-full"></div>
+            </div>
+            <div class="pt-4 border-t border-white/5">
+                <p class="text-[10px] opacity-50 uppercase mb-3" data-lang="theme">ТЕМА</p>
+                <button onclick="setTheme('void')" class="w-full p-3 mb-2 text-xs border border-white/10">VOID</button>
+                <button onclick="setTheme('matrix')" class="w-full p-3 mb-2 text-xs border border-green-500/30 text-green-500">MATRIX</button>
+                <button onclick="setTheme('crimson')" class="w-full p-3 text-xs border border-red-500/30 text-red-500">CRIMSON</button>
             </div>
         </div>
     </div>
 
-    <div id="notification-area" class="fixed bottom-8 right-8 z-[1000] flex flex-col gap-3 w-80 pointer-events-none"></div>
+    <div id="notification-area" class="fixed bottom-6 right-6 z-[2000] flex flex-col gap-3 pointer-events-none"></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, set, onValue, update, push, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, set, onValue, update, remove, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCK7gn8Xl-AW93FTni7q7Rx1QTUw0ILiCs",
             authDomain: "ink-game-843c1.firebaseapp.com",
             databaseURL: "https://ink-game-843c1-default-rtdb.europe-west1.firebasedatabase.app",
             projectId: "ink-game-843c1",
-            storageBucket: "ink-game-843c1.firebasestorage.app",
+            storageBucket: "ink-game-843c1.appspot.com", 
             messagingSenderId: "547943681956",
-            appId: "1:547943681956:web:aa7db2830eca6438f7fb31",
-            measurementId: "G-BPW1BM3H1N"
+            appId: "1:547943681956:web:aa7db2830eca6438f7fb31"
         };
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // --- STATE ---
+        // EXPORTS
+        window.remove = remove;
+        window.ref = ref;
+        window.db = db;
+
         let state = {
             player: JSON.parse(localStorage.getItem('ink_player')) || null,
-            tournament: null,
-            teams: {},
-            snowActive: true,
-            snowSpeed: 3
+            tournaments: {},
+            teams: {}, 
+            allPlayers: {},
+            gameMode: 'solo',
+            currentViewTournId: null,
+            adminSelectedTournId: null
         };
 
-        // --- DATABASE LISTENERS ---
-        onValue(ref(db, 'tournament'), (snapshot) => {
-            state.tournament = snapshot.val();
-            if(state.tournament) {
-                renderTournament(state.tournament);
-                if(state.player) document.getElementById('teams-container').classList.remove('hidden');
+        // --- SYNC ---
+        onValue(ref(db, 'tournaments'), (snap) => {
+            state.tournaments = snap.val() || {};
+            renderTournamentList(); 
+            renderMainTournaments(); 
+        });
+
+        onValue(ref(db, 'teams'), (snap) => {
+            state.teams = snap.val() || {};
+            if(document.getElementById('drawer-details').classList.contains('active') && state.currentViewTournId) {
+                showTournamentDetails(state.currentViewTournId);
+            }
+            renderTournamentList();
+            renderMainTournaments();
+            if(state.adminSelectedTournId) renderAdminControlPanel(state.adminSelectedTournId);
+        });
+
+        onValue(ref(db, 'users'), (snap) => {
+            state.allPlayers = snap.val() || {};
+            renderAdminTools();
+            // Removed Hall of Fame rendering
+            if(state.player && state.allPlayers[state.player.nick]) {
+                const updated = state.allPlayers[state.player.nick];
+                if(JSON.stringify(updated) !== JSON.stringify(state.player)) {
+                    state.player = updated;
+                    localStorage.setItem('ink_player', JSON.stringify(updated));
+                    renderProfile();
+                }
             }
         });
 
-        onValue(ref(db, 'teams'), (snapshot) => {
-            state.teams = snapshot.val() || {};
-            renderTeams();
-        });
+        // --- ADMIN ---
+        window.setGameMode = function(m) {
+            state.gameMode = m;
+            document.getElementById('mode-solo').classList.toggle('active', m === 'solo');
+            document.getElementById('mode-squad').classList.toggle('active', m === 'squad');
+            document.getElementById('adm-team-size').value = m === 'solo' ? 1 : 2;
+        };
 
-        // --- GLOBAL FUNCTIONS ---
-        window.handleRegistration = function() {
-            const nick = document.getElementById('reg-nick').value;
-            const tg = document.getElementById('reg-tg').value;
-            const wins = document.getElementById('reg-wins').value;
-            const device = document.getElementById('reg-device').value;
+        window.resetAdminForm = function() {
+            document.getElementById('adm-id').value = '';
+            document.getElementById('adm-format').value = '';
+            document.getElementById('adm-prize').value = '';
+            document.getElementById('adm-max-players').value = '';
+            document.getElementById('adm-rules').value = '';
+            document.getElementById('adm-team-size').value = 1;
+            setGameMode('solo');
+            document.getElementById('adm-form-title').innerText = "СОЗДАТЬ ТУРНИР";
+            document.getElementById('adm-save-btn').innerText = "СОЗДАТЬ";
+            document.getElementById('adm-control-panel').classList.add('hidden');
+            state.adminSelectedTournId = null;
+        };
 
-            if(!nick || !tg || !wins) return notify('ОШИБКА: ЗАПОЛНИТЕ ПОЛЯ', 'error');
+        window.editTournament = function(id) {
+            const trn = state.tournaments[id];
+            if(!trn) return;
+            document.getElementById('adm-id').value = id;
+            document.getElementById('adm-format').value = trn.format;
+            document.getElementById('adm-prize').value = trn.prize;
+            document.getElementById('adm-max-players').value = trn.maxPlayers;
+            document.getElementById('adm-rules').value = trn.rules;
+            document.getElementById('adm-team-size').value = trn.teamSize;
+            setGameMode(trn.mode);
+            document.getElementById('adm-form-title').innerText = "РЕДАКТИРОВАТЬ: " + trn.format;
+            document.getElementById('adm-save-btn').innerText = "СОХРАНИТЬ";
+        };
 
-            state.player = { nick, tg, wins, device, id: Math.floor(Math.random() * 9000) + 1000 };
-            localStorage.setItem('ink_player', JSON.stringify(state.player));
+        window.manageTournament = function(id) {
+            state.adminSelectedTournId = id;
+            renderAdminControlPanel(id);
+        };
+
+        window.renderAdminControlPanel = function(id) {
+            const trn = state.tournaments[id];
+            if(!trn) return;
+            document.getElementById('adm-control-panel').classList.remove('hidden');
+            document.getElementById('adm-ctrl-title').innerText = "УПРАВЛЕНИЕ: " + trn.format;
             
-            renderProfile();
-            closeAllPanels();
-            notify('ЛИЧНОСТЬ ИНИЦИАЛИЗИРОВАНА', 'success');
-        };
-
-        window.createTournamentInDB = function() {
-            const format = document.getElementById('adm-format').value;
-            const maxTeams = document.getElementById('adm-max-teams').value;
-            const prize = document.getElementById('adm-prize').value;
-            const rules = document.getElementById('adm-rules').value;
-
-            set(ref(db, 'tournament'), {
-                format, maxTeams, prize, rules,
-                teamSize: parseInt(format) || 2
-            }).then(() => {
-                logoutAdmin();
-                notify('ТУРНИР ОБНОВЛЕН У ВСЕХ', 'success');
-            });
-        };
-
-        window.createTeamInDB = function() {
-            const name = document.getElementById('new-team-name').value;
-            if(!name || !state.player) return notify('ОШИБКА', 'error');
-            if(Object.values(state.teams).some(t => t.leader === state.player.nick)) return notify('У ВАС УЖЕ ЕСТЬ ОТРЯД', 'error');
-
-            const teamId = "team_" + Date.now();
-            set(ref(db, 'teams/' + teamId), {
-                id: teamId,
-                name: name.toUpperCase(),
-                leader: state.player.nick,
-                members: [state.player.nick],
-                max: state.tournament?.teamSize || 2
-            }).then(() => {
-                closeAllPanels();
-                notify('ОТРЯД ЗАРЕГИСТРИРОВАН', 'success');
-            });
-        };
-
-        window.resetDatabase = function() {
-            if(confirm("УДАЛИТЬ ВСЕ ДАННЫЕ?")) {
-                remove(ref(db, '/')).then(() => location.reload());
+            const trnTeams = state.teams[id] ? Object.values(state.teams[id]) : [];
+            if(trnTeams.length === 0) { 
+                document.getElementById('adm-team-list').innerHTML = `<p class="text-[10px] opacity-30">Нет участников</p>`; 
+                return; 
             }
-        };
 
-        // --- UI RENDERING ---
-        function renderProfile() {
-            if(!state.player) return;
-            document.getElementById('profile-card').innerHTML = `
-                <div class="text-left animate-fade-in">
-                    <h3 class="font-tech text-lg">${state.player.nick}</h3>
-                    <p class="text-[9px] opacity-40 mb-4 tracking-widest">ID: ${state.player.id}</p>
-                    <div class="grid grid-cols-2 gap-2">
-                        <div class="bg-white/5 p-2 text-[10px]">WINS: ${state.player.wins}</div>
-                        <div class="bg-white/5 p-2 text-[10px]">${state.player.device}</div>
+            document.getElementById('adm-team-list').innerHTML = trnTeams.map(t => `
+                <div class="flex justify-between items-center p-2 bg-white/5 border-l-2 border-green-500/20">
+                    <div>
+                         <span class="text-[11px] font-bold block">${t.name}</span>
+                         <span class="text-[9px] opacity-50">${t.members.map(m=>m.nick).join(', ')}</span>
                     </div>
-                </div>
-            `;
-            document.getElementById('nav-options').classList.remove('hidden');
-        }
-
-        function renderTournament(t) {
-            document.getElementById('tournament-card').innerHTML = `
-                <div class="w-full flex flex-col md:flex-row justify-between items-center gap-6 animate-fade-in">
-                    <div class="text-center md:text-left">
-                        <div class="text-red-500 text-[10px] font-bold mb-4 animate-pulse">LIVE SIGNAL</div>
-                        <h2 class="text-6xl font-tech">${t.prize}</h2>
-                        <p class="text-[10px] tracking-widest opacity-40 uppercase mt-2">Prize Pool</p>
-                    </div>
-                    <div class="text-right border-l border-white/10 pl-8">
-                        <p class="text-2xl font-tech">${t.format}</p>
-                        <p class="text-[10px] opacity-60 font-mono mt-4 max-w-[200px]">${t.rules}</p>
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderTeams() {
-            const grid = document.getElementById('teams-grid');
-            const teamsArr = Object.values(state.teams);
-            grid.innerHTML = teamsArr.map(t => `
-                <div class="glass-panel p-6 border-l-2 border-green-500">
-                    <h4 class="font-tech">${t.name}</h4>
-                    <p class="text-[9px] opacity-40 uppercase mb-4">Leader: ${t.leader}</p>
-                    <div class="text-[10px] opacity-60">${t.members.length}/${t.max} Operators</div>
+                    <button onclick="declareWinner('${id}', '${t.id}')" class="px-2 py-1 bg-green-500 text-black text-[9px] font-bold rounded hover:scale-105 transition">🏆 WINNER</button>
                 </div>
             `).join('');
+        };
 
-            document.getElementById('stat-teams').innerText = teamsArr.length;
-            document.getElementById('stat-players').innerText = teamsArr.reduce((a, b) => a + b.members.length, 0);
+        window.declareWinner = async function(tournId, teamId) {
+            const team = state.teams[tournId][teamId];
+            if(!team) return;
+
+            if(confirm(`Объявить победителем ${team.name}? Это добавит +1 победу всем участникам.`)) {
+                for(let member of team.members) {
+                    const userRef = ref(db, 'users/' + member.nick);
+                    const snap = await get(userRef);
+                    if(snap.exists()) {
+                        await update(userRef, { wins: (snap.val().wins || 0) + 1 });
+                    } else {
+                        await set(userRef, { nick: member.nick, wins: 1, tg: '-' });
+                    }
+                }
+                notify(`Победа засчитана команде ${team.name}!`, 'success');
+                if(confirm("Удалить этот турнир из списка активных?")) {
+                    await remove(ref(db, `tournaments/${tournId}`));
+                    await remove(ref(db, `teams/${tournId}`));
+                    resetAdminForm();
+                }
+            }
+        };
+
+        window.saveTournament = async function() {
+            const id = document.getElementById('adm-id').value || "tourn_" + Date.now();
+            const data = {
+                id: id,
+                format: document.getElementById('adm-format').value,
+                prize: document.getElementById('adm-prize').value,
+                maxPlayers: document.getElementById('adm-max-players').value,
+                rules: document.getElementById('adm-rules').value,
+                teamSize: document.getElementById('adm-team-size').value,
+                mode: state.gameMode
+            };
+            await update(ref(db, `tournaments/${id}`), data);
+            notify(t('updated'), 'success');
+            resetAdminForm();
+        };
+
+        window.deleteTournament = async function(id) {
+            if(confirm(t('confirm_delete'))) {
+                await remove(ref(db, `tournaments/${id}`));
+                await remove(ref(db, `teams/${id}`));
+                notify(t('deleted'), 'success');
+                if(id === document.getElementById('adm-id').value) resetAdminForm();
+            }
+        };
+
+        window.renderTournamentList = function() {
+            const list = document.getElementById('adm-tourn-list');
+            const tourns = Object.values(state.tournaments);
+            if(tourns.length === 0) { list.innerHTML = `<p class="text-xs opacity-30 text-center py-4">Нет турниров</p>`; return; }
+            list.innerHTML = tourns.map(t => {
+                const count = state.teams[t.id] ? Object.keys(state.teams[t.id]).length : 0;
+                return `
+                <div class="bg-white/5 p-3 flex flex-col gap-2 text-xs border-l-2 border-white/20">
+                    <div class="flex justify-between">
+                        <div><p class="font-bold">${t.format} <span class="opacity-50">(${t.mode})</span></p><p class="opacity-50">${t.prize}</p></div>
+                        <div class="text-right"><p>${count}/${t.maxPlayers}</p></div>
+                    </div>
+                    <div class="flex gap-2 pt-2 border-t border-white/5 mt-1">
+                        <button onclick="manageTournament('${t.id}')" class="flex-1 bg-green-500/20 text-green-500 py-1 text-[9px] font-bold">УПРАВЛЕНИЕ</button>
+                        <button onclick="editTournament('${t.id}')" class="bg-white/10 px-3 py-1 text-[9px]">РЕД</button>
+                        <button onclick="deleteTournament('${t.id}')" class="bg-red-500/20 text-red-500 px-3 py-1 text-[9px]">УДАЛИТЬ</button>
+                    </div>
+                </div>`;
+            }).join('');
+        };
+
+        // --- CLIENT SIDE ---
+        window.renderMainTournaments = function() {
+            const container = document.getElementById('tournaments-container');
+            const tourns = Object.values(state.tournaments);
+            if(tourns.length === 0) {
+                container.innerHTML = `<div class="glass-panel p-10 text-center opacity-20 border-dashed"><p class="font-tech text-xs">${t('no_events')}</p></div>`;
+                return;
+            }
+            container.innerHTML = tourns.map(trn => {
+                const trnTeams = state.teams[trn.id] || {};
+                const totalJoined = Object.keys(trnTeams).length;
+                return `
+                <div class="glass-panel p-1 tournament-card-hover overflow-hidden" onclick="showTournamentDetails('${trn.id}')">
+                    <div class="p-6 md:p-10 flex flex-col md:flex-row justify-between items-center gap-6">
+                        <div class="w-full text-center md:text-left">
+                            <span class="text-[9px] font-black bg-white text-black px-2 py-1 uppercase">${t('active_tourn')}</span>
+                            <h2 class="text-3xl md:text-5xl font-tech mt-4 tracking-tighter">${trn.prize}</h2>
+                            <p class="text-xs mt-2 opacity-50 uppercase tracking-widest">${trn.format} / ${t(trn.mode)}</p>
+                        </div>
+                        <div class="flex flex-col items-center md:items-end w-full md:w-auto">
+                            <div class="text-right mb-4 hidden md:block">
+                                <p class="text-[9px] opacity-30">${t('participants')}</p>
+                                <p class="text-2xl font-tech">${totalJoined} / ${trn.maxPlayers}</p>
+                            </div>
+                            <button class="btn-nexus px-10 py-4 text-xs w-full md:w-auto">${t('about_btn')}</button>
+                        </div>
+                    </div>
+                    <div class="h-1 bg-white/5 w-full"><div class="h-full bg-white transition-all" style="width: ${(totalJoined/trn.maxPlayers)*100}%"></div></div>
+                </div>`;
+            }).join('');
+        };
+
+        window.showTournamentDetails = function(id) {
+            const trn = state.tournaments[id];
+            if(!trn) return;
+            state.currentViewTournId = id;
+            document.getElementById('det-title').innerText = trn.format;
+            document.getElementById('det-prize').innerText = trn.prize;
+            document.getElementById('det-format').innerText = trn.format;
+            document.getElementById('det-rules').innerText = trn.rules;
+            const trnTeams = state.teams[id] ? Object.values(state.teams[id]) : [];
+            document.getElementById('det-count').innerText = `${trnTeams.length} / ${trn.maxPlayers}`;
+            document.getElementById('det-participants').innerHTML = trnTeams.map(tm => `
+                <div class="bg-white/5 p-3 text-[11px] flex justify-between items-center border-l-2 border-white/20">
+                    <span class="font-bold tracking-wider">${tm.name}</span>
+                    <span class="opacity-30">${tm.members.length} ${t('ppl_short')}</span>
+                </div>
+            `).join('') || `<p class="text-center opacity-20 py-4 text-xs">${t('nobody_joined')}</p>`;
+            const bracketArea = document.getElementById('det-bracket-area');
+            const bracketGrid = document.getElementById('det-bracket-grid');
+            if(trnTeams.length >= 2) {
+                bracketArea.classList.remove('hidden');
+                let html = '';
+                for(let i=0; i<trnTeams.length; i+=2) {
+                    if(trnTeams[i+1]) {
+                        html += `<div class="bg-white/5 p-3 flex justify-between text-[10px] items-center">
+                                    <span class="font-bold">${trnTeams[i].name}</span>
+                                    <span class="opacity-20 font-tech">VS</span>
+                                    <span class="font-bold">${trnTeams[i+1].name}</span>
+                                </div>`;
+                    }
+                }
+                bracketGrid.innerHTML = html;
+            } else { bracketArea.classList.add('hidden'); }
+            document.getElementById('det-action-area').innerHTML = `<button onclick="openJoinMenu('${id}')" class="btn-nexus w-full py-5 shadow-lg" data-lang="join_btn">${t('join_btn')}</button>`;
+            toggleDrawer('drawer-details');
+        };
+
+        window.openJoinMenu = function(tournId) {
+            if(!state.player) return openRegisterDrawer();
+            const trn = state.tournaments[tournId];
+            if(!trn) return;
+            const area = document.getElementById('team-action-area');
+            const trnTeams = state.teams[tournId] ? Object.values(state.teams[tournId]) : [];
+            const myTeam = trnTeams.find(t => t.members.some(m => m.nick === state.player.nick));
+            if (myTeam) {
+                area.innerHTML = `<div class="glass-panel p-6 border-l-4 border-white"><h4 class="font-tech">${myTeam.name}</h4><p class="text-xs opacity-50 mt-4">${t('already_in')}</p></div>`;
+            } else if(trn.mode === 'solo') {
+                area.innerHTML = `<p class="text-sm opacity-50 bg-white/5 p-4 mb-4 rounded border border-white/10">${t('confirm_solo')}</p><button onclick="createTeam('${tournId}', '${state.player.nick}')" class="btn-nexus w-full py-5">${t('confirm')}</button>`;
+            } else {
+                area.innerHTML = `
+                    <input type="text" id="new-team-name" placeholder="${t('team_name_ph')}" class="w-full mb-4">
+                    <button onclick="createTeam('${tournId}')" class="btn-nexus w-full py-4 mb-4">${t('create_squad')}</button>
+                    <div class="relative py-4 text-center opacity-20 text-[10px] uppercase tracking-widest">${t('or_join')}</div>
+                    <div id="joinable-list" class="space-y-2"></div>
+                `;
+                setTimeout(() => {
+                    const joinables = trnTeams.filter(t => t.members.length < t.max);
+                    document.getElementById('joinable-list').innerHTML = joinables.map(t => `<button onclick="joinT('${tournId}', '${t.id}')" class="w-full p-4 bg-white/5 text-xs flex justify-between items-center border border-white/10 hover:bg-white/10 transition"><span class="font-bold">${t.name}</span><span>${t.members.length}/${t.max}</span></button>`).join('') || `<p class="text-xs opacity-20 text-center">${t('no_squads')}</p>`;
+                }, 10);
+            }
+            toggleDrawer('drawer-team');
+        };
+
+        window.createTeam = async function(tournId, customNick) {
+            const name = customNick || document.getElementById('new-team-name').value;
+            if(!name) return;
+            const trn = state.tournaments[tournId];
+            const tid = "t_" + Date.now();
+            const teamData = { id: tid, name: name.toUpperCase(), members: [{nick: state.player.nick}], totalWins: state.player.wins || 0, max: trn.teamSize };
+            await set(ref(db, `teams/${tournId}/${tid}`), teamData);
+            closeAllPanels(); notify(t('you_joined'), 'success');
+        };
+
+        window.joinT = async function(tournId, teamId) {
+            const teamRef = ref(db, `teams/${tournId}/${teamId}`);
+            const tDat = (await get(teamRef)).val();
+            if(!tDat || tDat.members.some(m => m.nick === state.player.nick)) return notify(t('already_in_team'), 'warning');
+            await update(teamRef, { members: [...tDat.members, {nick: state.player.nick}] });
+            closeAllPanels(); notify(t('joined_squad'), 'success');
+        };
+
+        // --- AUTH ---
+        window.openRegisterDrawer = function() {
+            document.getElementById('reg-nick').value = '';
+            document.getElementById('reg-nick').disabled = false;
+            document.getElementById('reg-tg').value = '';
+            document.getElementById('reg-wins').value = '0'; 
+            document.getElementById('reg-wins-container').classList.add('hidden'); // Hide wins on registration
+            document.getElementById('reg-title').innerText = t('create_acc');
+            document.getElementById('reg-btn').innerText = t('done');
+            toggleDrawer('drawer-reg');
         }
 
-        // Запуск при старте
+        window.openEditProfile = function() {
+            if(!state.player) return;
+            document.getElementById('reg-nick').value = state.player.nick;
+            document.getElementById('reg-nick').disabled = true; 
+            document.getElementById('reg-tg').value = state.player.tg;
+            document.getElementById('reg-wins').value = state.player.wins || 0; 
+            document.getElementById('reg-wins-container').classList.remove('hidden');
+            document.getElementById('reg-title').innerText = t('edit_profile');
+            document.getElementById('reg-btn').innerText = t('save_changes');
+            toggleDrawer('drawer-reg');
+        }
+
+        window.handleRegistration = async function() {
+            const nick = document.getElementById('reg-nick').value;
+            const tg = document.getElementById('reg-tg').value;
+            const winsInput = document.getElementById('reg-wins').value; 
+            if(!nick || !tg) return notify(t('fill_all_fields'), 'warning');
+            
+            // If editing, use existing wins logic, if new use 0 or default
+            let currentWins = 0;
+            if(state.player && state.player.nick === nick) {
+                // We are editing, preserve wins or take from input if we allowed editing (which we did for convenience)
+                 currentWins = parseInt(winsInput) || state.player.wins || 0;
+            } else {
+                // New user check
+                const snap = await get(ref(db, 'users/' + nick));
+                if(snap.exists()) {
+                    currentWins = snap.val().wins || 0;
+                }
+            }
+
+            const userData = { nick, tg, wins: currentWins };
+            await set(ref(db, 'users/' + nick), userData);
+            state.player = userData;
+            localStorage.setItem('ink_player', JSON.stringify(userData));
+            renderProfile();
+            closeAllPanels();
+            notify(t('profile_saved'), 'success');
+        };
+
+        window.renderProfile = function() {
+            const card = document.getElementById('profile-card');
+            if(!state.player) { card.innerHTML = `<button onclick="openRegisterDrawer()" class="btn-nexus w-full py-4 text-xs">${t('register')}</button>`; return; }
+            card.innerHTML = `<div class="flex flex-col items-center relative py-2"><div class="absolute top-0 right-0"><button onclick="openEditProfile()" class="btn-icon" title="${t('edit_profile')}"><i class="fas fa-pen text-[10px]"></i></button></div><p class="text-[9px] opacity-30 uppercase">Operator</p><h3 class="font-tech text-3xl my-2 break-all text-center">${state.player.nick}</h3><p class="text-xs text-accent opacity-70 tracking-widest">${state.player.tg}</p><div class="mt-6 pt-4 border-t border-white/5 flex justify-between items-center w-full"><span class="text-xs opacity-50 font-bold">${t('wins')}: ${state.player.wins || 0}</span><span class="text-[10px] text-green-500 font-bold tracking-widest">ONLINE</span></div></div>`;
+        }
+
+        window.renderAdminTools = function() {
+            const cont = document.getElementById('adm-winner-selection');
+            cont.innerHTML = Object.values(state.allPlayers).map(u => `<div class="flex justify-between items-center p-2 bg-white/5 rounded border border-white/5"><span class="text-[10px] font-bold truncate max-w-[80px]">${u.nick}</span><button onclick="addWin('${u.nick}')" class="text-green-500 text-[9px] font-bold tracking-wider hover:bg-green-500/10 p-1 rounded">+ WIN (${u.wins||0})</button></div>`).join('');
+        };
+        window.addWin = async function(n) { 
+            const userRef = ref(db, 'users/'+n);
+            const snap = await get(userRef);
+            if(snap.exists()) { await update(userRef, { wins: (snap.val().wins || 0) + 1 }); }
+            else { await set(userRef, { nick: n, wins: 1, tg: '-' }); }
+        };
+
         if(state.player) renderProfile();
+        setTimeout(() => updateInterfaceLanguage(), 100);
     </script>
 
     <script>
-        // Твои визуальные функции (Snow, Theme, Drawers)
-        function toggleDrawer(id) {
-            closeAllPanels();
-            document.getElementById(id).classList.add('active');
-            document.getElementById('overlay').style.display = 'block';
-        }
-        function closeAllPanels() {
-            document.querySelectorAll('.drawer').forEach(d => d.classList.remove('active'));
-            document.getElementById('settings-panel').style.right = '-100%';
-            document.getElementById('overlay').style.display = 'none';
-        }
-        function toggleSettings() {
-            document.getElementById('settings-panel').style.right = '0';
-            document.getElementById('overlay').style.display = 'block';
-        }
-        function setTheme(t) {
-            document.body.removeAttribute('data-theme');
-            if(t !== 'void') document.body.setAttribute('data-theme', t);
-        }
-        function notify(msg, type) {
-            const el = document.createElement('div');
-            el.className = `glass-panel p-4 notif border-l-4 ${type==='success'?'border-green-500':'border-red-500'} bg-black/90`;
-            el.innerHTML = `<span class="text-[10px] font-bold uppercase tracking-widest">${msg}</span>`;
-            document.getElementById('notification-area').appendChild(el);
-            setTimeout(() => el.remove(), 4000);
-        }
-
-        // Админ код
-        document.getElementById('admin-code').addEventListener('keypress', (e) => {
-            if(e.key === 'Enter' && e.target.value === '2025') {
-                document.getElementById('admin-dashboard').classList.add('active');
-                notify('ACCESS GRANTED', 'success');
-                e.target.value = '';
+        let currentLang = 'ru';
+        const langData = {
+            ru: {
+                adm_title: "УПРАВЛЕНИЕ", logout: "ВЫХОД", solo: "СОЛО", squad: "ОТРЯДЫ", adm_delete: "УДАЛИТЬ", adm_create: "СОЗДАТЬ", adm_players: "ИГРОКИ",
+                register: "РЕГИСТРАЦИЯ", no_events: "НЕТ АКТИВНЫХ СОБЫТИЙ", bracket: "СЕТКА МАТЧЕЙ", details: "ДЕТАЛИ", prize: "ПРИЗ", format: "ФОРМАТ", rules: "ПРАВИЛА",
+                participants: "УЧАСТНИКИ", join_btn: "ПРИНЯТЬ УЧАСТИЕ", reg_tourn_title: "РЕГИСТРАЦИЯ", create_acc: "СОЗДАТЬ АККАУНТ", done: "ГОТОВО", settings: "НАСТРОЙКИ",
+                snow_ctrl: "УПРАВЛЕНИЕ СНЕГОМ", snow_toggle: "СНЕГ ВКЛ/ВЫКЛ", snow_spd: "СКОРОСТЬ", theme: "ТЕМА", active_tourn: "АКТИВНЫЙ ТУРНИР", about_btn: "ИНФО",
+                nobody_joined: "Никто еще не записался", ppl_short: "чел.", already_in: "Вы уже в списке.", confirm_solo: "Подтверждаете участие?", confirm: "ПОДТВЕРДИТЬ",
+                team_name_ph: "НАЗВАНИЕ ОТРЯДА", create_squad: "СОЗДАТЬ ОТРЯД", or_join: "ИЛИ ВСТУПИТЬ", no_squads: "Нет свободных отрядов", you_joined: "Вы в игре!",
+                joined_squad: "Вы вступили в отряд", updated: "ОБНОВЛЕНО", confirm_delete: "Удалить этот турнир?", deleted: "Турнир удален", fill_all_fields: "Заполните все поля",
+                wins: "Победы", edit_profile: "РЕДАКТИРОВАТЬ ПРОФИЛЬ", save_changes: "СОХРАНИТЬ", profile_saved: "Профиль сохранен"
+            },
+            en: {
+                adm_title: "MANAGEMENT", logout: "LOGOUT", solo: "SOLO", squad: "SQUADS", adm_delete: "DELETE", adm_create: "CREATE", adm_players: "PLAYERS",
+                register: "REGISTER", no_events: "NO ACTIVE EVENTS", bracket: "MATCH BRACKET", details: "DETAILS", prize: "PRIZE", format: "FORMAT", rules: "RULES",
+                participants: "PARTICIPANTS", join_btn: "JOIN TOURNAMENT", reg_tourn_title: "REGISTRATION", create_acc: "CREATE ACCOUNT", done: "DONE", settings: "SETTINGS",
+                snow_ctrl: "SNOW CONTROL", snow_toggle: "TOGGLE SNOW", snow_spd: "SPEED", theme: "THEME", active_tourn: "ACTIVE TOURNAMENT", about_btn: "INFO",
+                nobody_joined: "No one joined yet", ppl_short: "ppl", already_in: "Already joined.", confirm_solo: "Confirm participation?", confirm: "CONFIRM",
+                team_name_ph: "SQUAD NAME", create_squad: "CREATE SQUAD", or_join: "OR JOIN", no_squads: "No open squads", you_joined: "You are in!",
+                joined_squad: "Joined successfully", updated: "UPDATED", confirm_delete: "Delete this tournament?", deleted: "Deleted", fill_all_fields: "Fill all fields",
+                wins: "Wins", edit_profile: "EDIT PROFILE", save_changes: "SAVE CHANGES", profile_saved: "Profile saved"
             }
-        });
-        function logoutAdmin() { document.getElementById('admin-dashboard').classList.remove('active'); }
+        };
 
-        // Снег
-        const canvas = document.getElementById('snow-canvas');
-        const ctx = canvas.getContext('2d');
-        let particles = [];
-        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-        window.addEventListener('resize', resize); resize();
-        for(let i=0; i<50; i++) particles.push({x: Math.random()*canvas.width, y: Math.random()*canvas.height, v: Math.random()*1+0.5, s: Math.random()*2});
-        function animate() {
-            ctx.clearRect(0,0,canvas.width,canvas.height);
-            ctx.fillStyle = "white"; ctx.globalAlpha = 0.2;
-            particles.forEach(p => {
-                p.y += p.v; if(p.y > canvas.height) p.y = -10;
-                ctx.beginPath(); ctx.arc(p.x, p.y, p.s, 0, Math.PI*2); ctx.fill();
-            });
-            requestAnimationFrame(animate);
+        function changeLang(l) { currentLang = l; document.documentElement.lang = l; updateInterfaceLanguage(); if(window.renderMainTournaments) window.renderMainTournaments(); if(window.renderProfile) window.renderProfile(); if(window.renderTournamentList) window.renderTournamentList(); }
+        function t(key) { return langData[currentLang][key] || key; }
+        window.t = t; 
+        function updateInterfaceLanguage() { document.querySelectorAll('[data-lang]').forEach(el => { const k = el.getAttribute('data-lang'); if(langData[currentLang][k]) el.innerText = langData[currentLang][k]; }); const inputs = { 'reg-nick': 'NICKNAME', 'new-team-name': langData[currentLang].team_name_ph }; for(let id in inputs) { if(document.getElementById(id)) document.getElementById(id).placeholder = inputs[id]; } }
+        
+        function toggleDrawer(id) { 
+            closeAllPanels(); 
+            document.getElementById(id).classList.add('active'); 
+            document.getElementById('overlay').style.display = 'block'; 
+            document.body.classList.add('modal-open'); // Lock body scroll
         }
-        animate();
+        
+        function closeAllPanels() { 
+            document.querySelectorAll('.drawer').forEach(d => d.classList.remove('active')); 
+            document.getElementById('settings-panel').style.right = '-100%'; 
+            document.getElementById('overlay').style.display = 'none'; 
+            document.body.classList.remove('modal-open'); // Unlock body scroll
+        }
+        
+        function toggleSettings() { 
+            document.getElementById('settings-panel').style.right = '0'; 
+            document.getElementById('overlay').style.display = 'block'; 
+            document.body.classList.add('modal-open');
+        }
+        
+        function setTheme(t) { document.body.removeAttribute('data-theme'); if(t !== 'void') document.body.setAttribute('data-theme', t); }
+        function notify(m, type) { const el = document.createElement('div'); el.className = `glass-panel p-4 text-[10px] font-bold border-l-4 ${type==='success'?'border-green-500': type==='warning'?'border-yellow-500':'border-red-500'} shadow-xl`; el.innerText = m; document.getElementById('notification-area').appendChild(el); setTimeout(() => el.remove(), 3000); }
+        
+        // ADMIN PASSWORD LISTENER
+        document.getElementById('admin-code').addEventListener('keypress', (e) => { 
+            if(e.key === 'Enter') {
+                if (e.target.value === 'уолтер лучший') { 
+                    document.getElementById('admin-dashboard').classList.add('active'); 
+                    document.body.classList.add('modal-open');
+                    e.target.value = ''; 
+                    if(window.fillAdminInputs) window.fillAdminInputs(); 
+                } else {
+                    notify('ACCESS DENIED', 'error');
+                }
+            } 
+        });
+        
+        function logoutAdmin() { 
+            document.getElementById('admin-dashboard').classList.remove('active'); 
+            document.body.classList.remove('modal-open');
+        }
+        
+        const canvas = document.getElementById('snow-canvas'); const ctx = canvas.getContext('2d');
+        let snow = [], snowActive = true, snowSpeedMult = 1;
+        window.toggleSnow = () => snowActive = !snowActive;
+        window.setSnowSpeed = (v) => snowSpeedMult = parseFloat(v);
+        window.changeLang = changeLang;
+        
+        function resize() { 
+            canvas.width = window.innerWidth; 
+            canvas.height = window.innerHeight; 
+            // Mobile Height Fix
+            let vh = window.innerHeight * 0.01;
+            document.documentElement.style.setProperty('--vh', `${vh}px`);
+        }
+        window.onresize = resize; resize();
+        
+        function initSnow() { snow = []; const cnt = Math.min(100, window.innerWidth/5); for(let i=0; i<cnt; i++) snow.push({x:Math.random()*canvas.width, y:Math.random()*canvas.height, s:Math.random()*2, v:Math.random()*1+0.5}); }
+        initSnow();
+        function anim() { ctx.clearRect(0,0,canvas.width,canvas.height); if(snowActive) { ctx.fillStyle = "white"; ctx.globalAlpha = 0.15; snow.forEach(p => { p.y += p.v * snowSpeedMult; if(p.y > canvas.height) { p.y = -10; p.x = Math.random() * canvas.width; } ctx.beginPath(); ctx.arc(p.x, p.y, p.s, 0, Math.PI*2); ctx.fill(); }); } requestAnimationFrame(anim); }
+        anim();
+        window.addEventListener('resize', initSnow);
     </script>
 </body>
 </html>
