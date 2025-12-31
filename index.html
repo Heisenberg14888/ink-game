@@ -2,310 +2,311 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <!-- Отключаем масштабирование при тапе, чтобы интерфейс не дергался -->
+    <!-- Важно: отключаем зум и ставим cover для Telegram -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>NEXUS | INK GAME OS</title>
+    <title>INK OS</title>
+    
+    <!-- Подключаем Telegram WebApp SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700&family=Syncopate:wght@400;700&display=swap" rel="stylesheet">
     
     <style>
         :root {
-            --bg-main: #050505;
-            --bg-panel: rgba(15, 15, 15, 0.98); /* Чуть менее прозрачный для читаемости */
-            --border: rgba(255, 255, 255, 0.15);
+            --bg-main: #000000; /* Чистый черный для Telegram */
+            --bg-panel: #111111;
+            --border: #333333;
             --accent: #ffffff;
-            --accent-glow: rgba(255, 255, 255, 0.2);
-            --gold: #FFD700;
         }
-
-        [data-theme="matrix"] { --accent: #00ff00; --border: rgba(0, 255, 0, 0.3); }
-        [data-theme="crimson"] { --accent: #ff0000; --border: rgba(255, 0, 0, 0.3); }
 
         body { 
             background-color: var(--bg-main); 
             color: white; 
             font-family: 'Space Grotesk', sans-serif; 
-            transition: all 0.4s ease; 
             overflow-x: hidden;
             -webkit-tap-highlight-color: transparent;
-            min-height: 100dvh;
+            min-height: 100vh;
+            /* Исправление для Telegram фона */
+            background-attachment: fixed;
         }
         
-        /* Блокируем скролл основного тела, когда открыто меню */
-        body.modal-open { overflow: hidden; position: fixed; width: 100%; height: 100dvh; }
+        body.modal-open { overflow: hidden; height: 100vh; position: fixed; width: 100%; }
 
         .font-tech { font-family: 'Syncopate', sans-serif; }
-        .glass-panel { background: var(--bg-panel); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--border); }
+        .glass-panel { background: var(--bg-panel); border: 1px solid var(--border); }
         
         .btn-nexus { 
             background: var(--accent); color: black; font-weight: 800; 
-            letter-spacing: 1px; transition: all 0.3s; text-transform: uppercase;
-            border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
-            touch-action: manipulation;
-            user-select: none;
-            min-height: 50px; /* Увеличенная зона клика */
+            letter-spacing: 1px; text-transform: uppercase;
+            border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; 
+            min-height: 56px; /* Большая кнопка для пальца */
+            border-radius: 8px;
+            font-size: 14px;
         }
-        .btn-nexus:active { transform: scale(0.96); opacity: 0.8; }
         
-        .btn-icon { background: rgba(255,255,255,0.1); color: white; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: 0.3s; cursor: pointer; }
+        .btn-icon { background: #222; color: white; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 8px; }
 
-        /* Mobile Input Fix */
+        /* Стили инпутов под Telegram */
         input, textarea { 
-            background: rgba(255,255,255,0.05) !important; 
-            border: 1px solid var(--border) !important; 
+            background: #1a1a1a !important; 
+            border: 1px solid #333 !important; 
             color: white !important; 
-            padding: 16px; /* Больше паддинг для пальца */
+            padding: 16px; 
             font-size: 16px !important; 
-            border-radius: 4px;
+            border-radius: 8px;
             width: 100%;
             -webkit-appearance: none;
+            margin-bottom: 10px;
         }
-        input:focus { border-color: var(--accent) !important; outline: none; background: rgba(255,255,255,0.1) !important; }
+        input:focus { border-color: white !important; outline: none; }
 
-        /* DRAWER FIX - САМОЕ ВАЖНОЕ */
+        /* --- ВАЖНОЕ ИЗМЕНЕНИЕ: DRAWER (Окно) --- */
         .drawer {
             position: fixed; 
             top: 0; 
-            right: 0; 
-            width: 100%; 
-            max-width: 450px; 
-            height: 100dvh; /* Динамическая высота */
-            background: #080808; 
-            border-left: 1px solid var(--border);
-            z-index: 1000; /* Поверх всего */
-            transform: translateX(100%);
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            left: 0; 
+            width: 100vw; 
+            height: 100vh; /* Полная высота */
+            background: #000000; 
+            z-index: 10000; /* Максимальный слой */
             
-            /* Делаем сам drawer скроллящимся контейнером */
+            /* Скрыто по умолчанию */
+            display: none; 
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            
+            /* Скролл внутри */
             overflow-y: auto; 
             -webkit-overflow-scrolling: touch;
-            
-            display: flex;
-            flex-direction: column;
+        }
+
+        /* Класс для открытия */
+        .drawer.active {
+            display: block;
+            opacity: 1;
         }
 
         .drawer-content {
-            padding: 2rem;
-            padding-bottom: 150px; /* Огромный отступ снизу для клавиатуры */
-            flex-grow: 1;
+            padding: 20px;
+            padding-bottom: 300px; /* ОГРОМНЫЙ отступ снизу для клавиатуры */
+            min-height: 100%;
         }
-        
-        /* Mobile overrides */
-        @media(max-width: 640px) {
-            .drawer { 
-                max-width: 100%; 
-                border-left: none;
-            }
-            .drawer-content {
-                padding: 1.5rem;
-                padding-bottom: 50vh; /* Пол-экрана пустоты снизу, чтобы проскроллить клавиатуру */
-            }
-        }
-        
-        .drawer.active { transform: translateX(0); }
 
-        /* Шапка drawer'а всегда сверху */
         .drawer-header {
-            position: sticky;
-            top: 0;
-            background: #080808;
-            z-index: 10;
-            padding-bottom: 10px;
+            display: flex; justify-content: space-between; align-items: center;
+            padding-bottom: 20px; margin-bottom: 20px;
             border-bottom: 1px solid var(--border);
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            position: sticky; top: 0; background: #000; z-index: 10;
+            padding-top: 10px;
         }
 
-        #overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85); z-index: 900; display: none; backdrop-filter: blur(5px);
-            -webkit-backdrop-filter: blur(5px);
-        }
-
+        /* Спец. стили для админки */
         #admin-dashboard {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100dvh;
-            background: #000; z-index: 2000; 
-            transform: translateY(-100%);
-            transition: transform 0.4s ease;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 20000; 
+            display: none;
             overflow-y: auto;
         }
-        #admin-dashboard.active { transform: translateY(0); }
+        #admin-dashboard.active { display: block; }
+        
+        #settings-panel {
+            position: fixed; top: 0; right: 0; width: 100%; height: 100%; background: #000; z-index: 15000;
+            display: none; overflow-y: auto;
+        }
+        #settings-panel.active { display: block; }
+
+        .tournament-card {
+            background: #111; border: 1px solid #333; padding: 20px; margin-bottom: 15px; border-radius: 12px;
+        }
     </style>
 </head>
-<body class="pb-10">
-    <canvas id="snow-canvas" class="fixed top-0 left-0 w-full h-full pointer-events-none z-0"></canvas>
-    <div id="overlay" onclick="closeAllPanels()"></div>
+<body class="pb-20">
+    <!-- Снег пока уберем для производительности в ТГ, или оставим canvas -->
+    <canvas id="snow-canvas" class="fixed top-0 left-0 w-full h-full pointer-events-none z-0 opacity-20"></canvas>
 
     <!-- Admin Panel -->
     <div id="admin-dashboard">
-        <div class="max-w-6xl mx-auto p-4 pb-40">
-            <div class="flex justify-between items-center mb-10 border-b border-white/10 pb-5">
-                <h2 class="text-2xl font-tech font-bold">УПРАВЛЕНИЕ</h2>
-                <button onclick="logoutAdmin()" class="px-6 py-2 border border-red-500 text-red-500 text-xs">ВЫХОД</button>
+        <div class="max-w-md mx-auto p-4 pb-40">
+            <div class="flex justify-between items-center mb-6 border-b border-gray-800 pb-4 sticky top-0 bg-black pt-4 z-50">
+                <h2 class="text-xl font-bold">ADMIN</h2>
+                <button onclick="logoutAdmin()" class="text-red-500 font-bold text-sm">EXIT</button>
             </div>
             
-            <div class="glass-panel p-6 space-y-4">
-                <h3 class="font-tech text-sm mb-4" id="adm-form-title">СОЗДАТЬ ТУРНИР</h3>
-                <input type="hidden" id="adm-id">
-                <div class="flex gap-2 mb-4">
-                    <button onclick="setGameMode('solo')" id="mode-solo" class="flex-1 p-3 border border-white/20 text-xs">СОЛО</button>
-                    <button onclick="setGameMode('squad')" id="mode-squad" class="flex-1 p-3 border border-white/20 text-xs">ОТРЯДЫ</button>
+            <div class="space-y-4">
+                <div class="bg-[#111] p-4 rounded border border-gray-800">
+                    <h3 class="text-sm font-bold mb-4">NEW TOURNAMENT</h3>
+                    <input type="hidden" id="adm-id">
+                    <div class="flex gap-2 mb-2">
+                        <button onclick="setGameMode('solo')" id="mode-solo" class="flex-1 p-2 border border-gray-700 text-xs rounded bg-white text-black">SOLO</button>
+                        <button onclick="setGameMode('squad')" id="mode-squad" class="flex-1 p-2 border border-gray-700 text-xs rounded text-white">SQUAD</button>
+                    </div>
+                    <input type="text" id="adm-format" placeholder="Format (1x1)">
+                    <input type="text" id="adm-prize" placeholder="Prize (1000 RBX)">
+                    <input type="number" id="adm-max-players" placeholder="Max Players">
+                    <input type="number" id="adm-team-size" value="1" placeholder="Team Size" class="hidden">
+                    <textarea id="adm-rules" placeholder="Rules" class="h-20"></textarea>
+                    
+                    <button onclick="saveTournament()" class="btn-nexus w-full mt-2">CREATE</button>
+                    <button onclick="resetAdminForm()" class="w-full py-3 text-xs text-gray-500">RESET</button>
                 </div>
-                <div class="grid grid-cols-1 gap-4">
-                    <input type="text" id="adm-format" placeholder="Формат (1x1)">
-                    <input type="number" id="adm-team-size" value="1" placeholder="Размер команды">
-                    <input type="text" id="adm-prize" placeholder="Приз">
-                    <input type="number" id="adm-max-players" placeholder="Макс. игроков">
-                </div>
-                <textarea id="adm-rules" placeholder="Правила..." class="w-full h-24 mt-4"></textarea>
-                
-                <div class="flex gap-2 pt-4">
-                    <button onclick="resetAdminForm()" class="btn-secondary p-4 flex-1">СБРОС</button>
-                    <button onclick="saveTournament()" class="btn-nexus p-4 flex-[2]" id="adm-save-btn">СОЗДАТЬ</button>
-                </div>
-            </div>
-            
-            <div class="mt-8">
-                 <h3 class="font-tech text-sm mb-4">АКТИВНЫЕ ТУРНИРЫ</h3>
-                 <div id="adm-tourn-list" class="space-y-3"></div>
-            </div>
-            
-            <div id="adm-control-panel" class="hidden mt-8 p-4 border border-green-500">
-                <h3 class="text-green-500 mb-4">УПРАВЛЕНИЕ МАТЧЕМ</h3>
-                <div id="adm-team-list" class="space-y-2"></div>
-            </div>
 
-            <div class="mt-8 pb-20">
-                <h3 class="text-xs font-tech mb-4">БЫСТРОЕ НАЧИСЛЕНИЕ ПОБЕД</h3>
-                <div id="adm-winner-selection" class="grid grid-cols-1 md:grid-cols-3 gap-2"></div>
+                <div class="bg-[#111] p-4 rounded border border-gray-800">
+                    <h3 class="text-sm font-bold mb-2">ACTIVE LIST</h3>
+                    <div id="adm-tourn-list" class="space-y-2"></div>
+                </div>
+
+                <div id="adm-control-panel" class="bg-[#111] p-4 rounded border border-green-900 hidden">
+                    <h3 class="text-green-500 font-bold mb-2">MATCH CONTROL</h3>
+                    <div id="adm-team-list" class="space-y-2"></div>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Main Layout -->
-    <div class="relative z-10 max-w-7xl mx-auto p-4 md:p-10">
-        <header class="flex justify-between items-center mb-12">
-            <h1 class="text-3xl md:text-6xl font-bold font-tech tracking-tighter select-none">INK<span class="opacity-20">_OS</span></h1>
+    <div class="relative z-10 p-4 max-w-md mx-auto">
+        <header class="flex justify-between items-center mb-8 pt-2">
+            <h1 class="text-3xl font-bold font-tech tracking-tighter">INK<span class="text-gray-600">_OS</span></h1>
             <div class="flex items-center gap-3">
-                <input type="password" id="admin-code" placeholder="KEY" class="bg-white/5 border-none text-center text-xs w-24 !p-2 focus:w-32 transition-all rounded">
-                <button onclick="toggleSettings()" class="w-12 h-12 glass-panel flex items-center justify-center active:scale-95 transition text-lg"><i class="fas fa-bars"></i></button>
+                <!-- Кнопка админки скрытая, но доступная -->
+                <input type="password" id="admin-code" placeholder="KEY" class="bg-[#111] border-none text-center text-xs w-16 !p-2 rounded focus:w-24 transition-all h-[40px] !mb-0">
+                <button onclick="toggleSettings()" class="btn-icon"><i class="fas fa-bars"></i></button>
             </div>
         </header>
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10">
-            <div class="lg:col-span-4 order-1 lg:order-none">
-                <div id="profile-card" class="glass-panel p-6 md:p-8"></div>
-            </div>
-            <div class="lg:col-span-8 space-y-6 order-2 lg:order-none">
-                <div id="tournaments-container"></div>
+        <!-- Profile Section -->
+        <div id="profile-card" class="mb-8">
+            <!-- Загружается JS -->
+            <div class="animate-pulse h-24 bg-[#111] rounded-xl"></div>
+        </div>
+
+        <!-- Tournaments List -->
+        <div class="space-y-4">
+            <h2 class="text-xs font-bold opacity-50 uppercase tracking-widest mb-2" data-lang="active_tourn">TOURNAMENTS</h2>
+            <div id="tournaments-container" class="space-y-4 pb-20">
+                <!-- Загружается JS -->
             </div>
         </div>
     </div>
 
-    <!-- Drawer: Registration (FIXED) -->
+    <!-- Drawer: REGISTRATION (Самое важное окно) -->
     <div id="drawer-reg" class="drawer">
         <div class="drawer-content">
             <div class="drawer-header">
-                <h3 class="font-tech text-lg" id="reg-title" data-lang="create_acc">РЕГИСТРАЦИЯ</h3>
-                <button onclick="closeAllPanels()" class="p-4 -mr-4"><i class="fas fa-times text-xl"></i></button>
+                <h3 class="font-tech text-xl">PROFILE</h3>
+                <button onclick="closeAllPanels()" class="p-2"><i class="fas fa-times text-2xl"></i></button>
             </div>
             
-            <form onsubmit="event.preventDefault(); handleRegistration();" class="flex flex-col gap-6">
-                <div>
-                    <label class="text-[10px] uppercase opacity-50 ml-1 font-bold mb-2 block">Никнейм</label>
-                    <input type="text" id="reg-nick" placeholder="Введи ник" autocomplete="off" autocorrect="off" autocapitalize="off" enterkeyhint="next">
+            <form onsubmit="event.preventDefault(); handleRegistration();" class="flex flex-col gap-4">
+                <div class="bg-[#111] p-4 rounded-xl border border-gray-800">
+                    <label class="text-[10px] uppercase text-gray-500 font-bold mb-1 block">NICKNAME (ROBLOX)</label>
+                    <input type="text" id="reg-nick" placeholder="Enter Nickname" autocomplete="off" required>
                 </div>
-                <div>
-                    <label class="text-[10px] uppercase opacity-50 ml-1 font-bold mb-2 block">Telegram</label>
-                    <input type="text" id="reg-tg" placeholder="@username" autocomplete="off" autocorrect="off" autocapitalize="off" enterkeyhint="done">
-                </div>
-                
-                <div id="reg-wins-container" class="hidden">
-                    <label class="text-[10px] uppercase opacity-50 ml-1 font-bold mb-2 block">Победы</label>
-                    <input type="number" id="reg-wins" disabled>
+
+                <div class="bg-[#111] p-4 rounded-xl border border-gray-800">
+                    <label class="text-[10px] uppercase text-gray-500 font-bold mb-1 block">TELEGRAM</label>
+                    <input type="text" id="reg-tg" placeholder="@username" autocomplete="off" required>
                 </div>
                 
-                <button type="submit" class="btn-nexus w-full py-5 text-sm shadow-lg mt-4" id="reg-btn">ГОТОВО</button>
+                <div id="reg-wins-block" class="bg-[#111] p-4 rounded-xl border border-gray-800 hidden">
+                    <label class="text-[10px] uppercase text-gray-500 font-bold mb-1 block">WINS</label>
+                    <input type="number" id="reg-wins" disabled class="opacity-50">
+                </div>
                 
-                <!-- Пустой блок, чтобы клавиатура не перекрыла кнопку при скролле -->
-                <div class="h-40 w-full"></div>
+                <p class="text-[10px] text-gray-500 text-center mt-2">Make sure your data is correct for payouts.</p>
+                
+                <button type="submit" class="btn-nexus w-full shadow-lg mt-4 text-lg">SAVE PROFILE</button>
             </form>
         </div>
     </div>
 
-    <!-- Drawer: Details -->
+    <!-- Drawer: DETAILS -->
     <div id="drawer-details" class="drawer">
         <div class="drawer-content">
             <div class="drawer-header">
-                <h3 class="font-tech text-xl" id="det-title">ДЕТАЛИ</h3>
-                <button onclick="closeAllPanels()" class="p-4 -mr-4"><i class="fas fa-times text-xl"></i></button>
+                <h3 class="font-tech text-xl" id="det-title">INFO</h3>
+                <button onclick="closeAllPanels()" class="p-2"><i class="fas fa-times text-2xl"></i></button>
             </div>
+            
             <div class="space-y-6">
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="bg-white/5 p-4 rounded"><p class="text-[9px] opacity-40 uppercase">Приз</p><p class="text-xl font-bold text-yellow-500" id="det-prize">-</p></div>
-                    <div class="bg-white/5 p-4 rounded"><p class="text-[9px] opacity-40 uppercase">Формат</p><p class="text-xl font-bold" id="det-format">-</p></div>
+                <div class="flex gap-4">
+                    <div class="flex-1 bg-[#111] p-4 rounded-xl border border-gray-800">
+                        <p class="text-[10px] text-gray-500">PRIZE</p>
+                        <p class="text-xl font-bold text-yellow-500" id="det-prize">-</p>
+                    </div>
+                    <div class="flex-1 bg-[#111] p-4 rounded-xl border border-gray-800">
+                        <p class="text-[10px] text-gray-500">FORMAT</p>
+                        <p class="text-xl font-bold" id="det-format">-</p>
+                    </div>
                 </div>
+
+                <div class="bg-[#111] p-4 rounded-xl border border-gray-800">
+                    <p class="text-[10px] text-gray-500 mb-2">RULES</p>
+                    <p class="text-sm text-gray-300 leading-relaxed" id="det-rules">-</p>
+                </div>
+
                 <div>
-                    <p class="text-[9px] opacity-40 uppercase mb-2">Правила</p>
-                    <p class="text-sm leading-relaxed bg-white/5 p-4 rounded font-medium select-text" id="det-rules">-</p>
+                    <div class="flex justify-between mb-2 px-1">
+                        <span class="text-xs font-bold text-gray-500">PLAYERS</span>
+                        <span class="text-xs font-bold" id="det-count">0/0</span>
+                    </div>
+                    <div id="det-participants" class="bg-[#111] rounded-xl border border-gray-800 p-2 max-h-40 overflow-y-auto space-y-1"></div>
                 </div>
-                <div>
-                    <p class="text-[9px] opacity-40 uppercase mb-3 flex justify-between"><span>Участники</span><span id="det-count">0/0</span></p>
-                    <div id="det-participants" class="space-y-2 max-h-60 overflow-y-auto pr-2 border border-white/5 p-2 rounded"></div>
+                
+                <!-- Bracket -->
+                <div id="det-bracket-area" class="hidden">
+                    <p class="text-xs font-bold text-gray-500 mb-2 px-1">MATCHES</p>
+                    <div id="det-bracket-grid" class="space-y-2"></div>
                 </div>
-                <div id="det-bracket-area" class="hidden pt-4 border-t border-white/10">
-                    <p class="text-[9px] opacity-40 uppercase mb-3">СЕТКА</p>
-                    <div id="det-bracket-grid" class="grid grid-cols-1 gap-2"></div>
-                </div>
-                <div id="det-action-area" class="pt-4 sticky bottom-0 bg-[#080808] pb-4 z-20"></div>
+
+                <!-- Кнопка действия фиксированная внизу -->
+                <div id="det-action-area" class="pt-4 pb-10"></div>
             </div>
         </div>
     </div>
 
-    <!-- Drawer: Team Join -->
+    <!-- Drawer: TEAM JOIN -->
     <div id="drawer-team" class="drawer">
         <div class="drawer-content">
             <div class="drawer-header">
-                <h3 class="font-tech text-lg" data-lang="reg_tourn_title">УЧАСТИЕ</h3>
-                <button onclick="closeAllPanels()" class="p-4 -mr-4"><i class="fas fa-arrow-left text-xl"></i></button>
+                <h3 class="font-tech text-xl">JOIN</h3>
+                <button onclick="closeAllPanels()" class="p-2"><i class="fas fa-arrow-left text-2xl"></i></button>
             </div>
             <div id="team-action-area" class="space-y-6"></div>
         </div>
     </div>
 
     <!-- Settings Panel -->
-    <div id="settings-panel" class="fixed top-0 right-0 h-full w-full max-w-[300px] bg-black border-l border-white/10 z-[2000] transform translate-x-full transition-transform duration-300">
-        <div class="p-8 h-full overflow-y-auto">
-            <div class="flex justify-between items-center mb-10">
-                <h2 class="font-tech text-sm" data-lang="settings">НАСТРОЙКИ</h2>
-                <button onclick="closeAllPanels()"><i class="fas fa-times text-xl"></i></button>
+    <div id="settings-panel">
+        <div class="drawer-content">
+            <div class="drawer-header">
+                <h3 class="font-tech text-xl">SETTINGS</h3>
+                <button onclick="closeAllPanels()" class="p-2"><i class="fas fa-times text-2xl"></i></button>
             </div>
-            <div class="space-y-6 pb-20">
-                <div class="flex gap-2">
-                    <button onclick="changeLang('ru')" class="flex-1 p-3 text-xs border border-white/20">RU</button>
-                    <button onclick="changeLang('en')" class="flex-1 p-3 text-xs border border-white/20">EN</button>
-                </div>
-                <div class="border-t border-white/10 pt-4 space-y-3">
-                    <button onclick="toggleSnow()" class="w-full p-4 border border-white/10 text-xs flex justify-between items-center"><span>СНЕГ ВКЛ/ВЫКЛ</span><i class="fas fa-snowflake"></i></button>
-                </div>
-                <div class="pt-4 border-t border-white/5">
-                    <p class="text-[10px] opacity-50 uppercase mb-3">ТЕМА</p>
-                    <button onclick="setTheme('void')" class="w-full p-3 mb-2 text-xs border border-white/10">VOID</button>
-                    <button onclick="setTheme('matrix')" class="w-full p-3 mb-2 text-xs border border-green-500/30 text-green-500">MATRIX</button>
-                    <button onclick="setTheme('crimson')" class="w-full p-3 text-xs border border-red-500/30 text-red-500">CRIMSON</button>
-                </div>
+            <div class="space-y-4">
+                <button onclick="changeLang('ru')" class="w-full p-4 bg-[#111] rounded text-left font-bold border border-gray-800">🇷🇺 RUSSIAN</button>
+                <button onclick="changeLang('en')" class="w-full p-4 bg-[#111] rounded text-left font-bold border border-gray-800">🇺🇸 ENGLISH</button>
             </div>
         </div>
     </div>
 
-    <div id="notification-area" class="fixed top-6 right-6 z-[3000] flex flex-col gap-3 pointer-events-none w-full max-w-[300px] px-4 md:px-0 ml-auto"></div>
+    <!-- Уведомления -->
+    <div id="notification-area" class="fixed top-4 left-4 right-4 z-[30000] flex flex-col gap-2 pointer-events-none"></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, set, onValue, update, remove, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // --- TELEGRAM INIT ---
+        const tg = window.Telegram.WebApp;
+        tg.expand(); // РАСКРЫВАЕМ НА ВЕСЬ ЭКРАН СРАЗУ
+        tg.enableClosingConfirmation();
+        
+        // Красим хедер телеграма в черный
+        tg.setHeaderColor('#000000');
+        tg.setBackgroundColor('#000000');
 
         const firebaseConfig = {
             apiKey: "AIzaSyCK7gn8Xl-AW93FTni7q7Rx1QTUw0ILiCs",
@@ -320,469 +321,376 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // EXPORTS
-        window.remove = remove;
-        window.ref = ref;
-        window.db = db;
-
+        // State
         let state = {
             player: JSON.parse(localStorage.getItem('ink_player')) || null,
+            // Пытаемся получить данные из TG
+            tgUser: tg.initDataUnsafe?.user || null,
             tournaments: {},
-            teams: {}, 
-            allPlayers: {},
-            gameMode: 'solo',
-            currentViewTournId: null,
-            adminSelectedTournId: null
+            teams: {},
+            gameMode: 'solo'
         };
 
-        // --- SYNC ---
+        // Если это первый заход и есть данные от ТГ, можно предзаполнить (опционально)
+        if(!state.player && state.tgUser) {
+            // Можно авто-логинить, но лучше попросить подтвердить ник
+        }
+
+        // --- Firebase Listeners ---
         onValue(ref(db, 'tournaments'), (snap) => {
             state.tournaments = snap.val() || {};
-            renderTournamentList(); 
-            renderMainTournaments(); 
+            renderList(); renderAdminList();
         });
-
         onValue(ref(db, 'teams'), (snap) => {
             state.teams = snap.val() || {};
-            if(document.getElementById('drawer-details').classList.contains('active') && state.currentViewTournId) {
-                showTournamentDetails(state.currentViewTournId);
+            renderList();
+            // Обновляем открытое окно деталей если нужно
+            if(document.getElementById('drawer-details').classList.contains('active') && state.activeId) {
+                openDetails(state.activeId);
             }
-            renderTournamentList();
-            renderMainTournaments();
-            if(state.adminSelectedTournId) renderAdminControlPanel(state.adminSelectedTournId);
         });
+        
+        // --- RENDER FUNCTIONS ---
 
-        onValue(ref(db, 'users'), (snap) => {
-            state.allPlayers = snap.val() || {};
-            renderAdminTools();
-            if(state.player && state.allPlayers[state.player.nick]) {
-                const updated = state.allPlayers[state.player.nick];
-                if(JSON.stringify(updated) !== JSON.stringify(state.player)) {
-                    state.player = updated;
-                    localStorage.setItem('ink_player', JSON.stringify(updated));
-                    renderProfile();
+        // 1. Main List
+        window.renderList = function() {
+            const cont = document.getElementById('tournaments-container');
+            const list = Object.values(state.tournaments);
+            
+            if(list.length === 0) {
+                cont.innerHTML = '<div class="p-10 text-center opacity-30 border border-dashed border-gray-700 rounded-xl">NO ACTIVE EVENTS</div>';
+                return;
+            }
+
+            cont.innerHTML = list.map(t => {
+                const teams = state.teams[t.id] || {};
+                const count = Object.keys(teams).length;
+                return `
+                <div onclick="openDetails('${t.id}')" class="tournament-card relative overflow-hidden active:scale-95 transition-transform cursor-pointer">
+                    <div class="relative z-10 flex justify-between items-center">
+                        <div>
+                            <div class="bg-white text-black text-[10px] font-bold px-2 py-1 inline-block rounded-sm mb-2">LIVE</div>
+                            <h2 class="text-3xl font-tech font-bold text-white">${t.prize}</h2>
+                            <p class="text-xs text-gray-400 mt-1 uppercase">${t.format} / ${t.mode}</p>
+                        </div>
+                        <div class="text-right">
+                             <span class="block text-2xl font-bold">${count}/${t.maxPlayers}</span>
+                             <span class="text-[10px] text-gray-500">JOINED</span>
+                        </div>
+                    </div>
+                    <div class="absolute bottom-0 left-0 h-1 bg-gray-800 w-full">
+                        <div class="h-full bg-white" style="width: ${(count/t.maxPlayers)*100}%"></div>
+                    </div>
+                </div>`;
+            }).join('');
+        };
+
+        // 2. Profile
+        window.renderProfile = function() {
+            const card = document.getElementById('profile-card');
+            if(!state.player) {
+                card.innerHTML = `<button onclick="openReg()" class="btn-nexus w-full shadow-lg text-lg">CREATE ACCOUNT</button>`;
+            } else {
+                card.innerHTML = `
+                <div class="bg-[#111] p-6 rounded-xl border border-gray-800 flex justify-between items-center relative">
+                    <button onclick="openReg(true)" class="absolute top-4 right-4 text-gray-500 p-2"><i class="fas fa-cog"></i></button>
+                    <div>
+                        <p class="text-[10px] text-gray-500 font-bold uppercase mb-1">OPERATOR</p>
+                        <h2 class="text-2xl font-bold text-white break-all pr-8">${state.player.nick}</h2>
+                        <p class="text-xs text-blue-400 mt-1">${state.player.tg}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[10px] text-gray-500 font-bold uppercase">WINS</p>
+                        <p class="text-3xl font-tech font-bold text-white">${state.player.wins || 0}</p>
+                    </div>
+                </div>`;
+            }
+        };
+
+        // --- DRAWER LOGIC (TELEGRAM OPTIMIZED) ---
+        // Используем классы active вместо сложных анимаций для надежности
+        
+        window.openReg = function(isEdit = false) {
+            closeAllPanels();
+            const drawer = document.getElementById('drawer-reg');
+            drawer.classList.add('active'); // Показываем
+            
+            // Заполняем поля
+            const nickInp = document.getElementById('reg-nick');
+            const tgInp = document.getElementById('reg-tg');
+            const winsBlock = document.getElementById('reg-wins-block');
+            
+            if(state.player) {
+                nickInp.value = state.player.nick;
+                nickInp.disabled = true; // Ник менять нельзя
+                tgInp.value = state.player.tg;
+                document.getElementById('reg-wins').value = state.player.wins || 0;
+                winsBlock.classList.remove('hidden');
+            } else {
+                nickInp.value = '';
+                nickInp.disabled = false;
+                // Если есть юзернейм от ТГ
+                if(state.tgUser && state.tgUser.username) tgInp.value = '@' + state.tgUser.username;
+                else tgInp.value = '';
+                
+                winsBlock.classList.add('hidden');
+            }
+        };
+
+        window.openDetails = function(id) {
+            state.activeId = id;
+            closeAllPanels();
+            const t = state.tournaments[id];
+            if(!t) return;
+            
+            document.getElementById('det-title').innerText = t.format;
+            document.getElementById('det-prize').innerText = t.prize;
+            document.getElementById('det-format').innerText = t.format;
+            document.getElementById('det-rules').innerText = t.rules;
+            
+            const teams = state.teams[id] ? Object.values(state.teams[id]) : [];
+            document.getElementById('det-count').innerText = `${teams.length}/${t.maxPlayers}`;
+            
+            // Render Participants
+            document.getElementById('det-participants').innerHTML = teams.map(tm => 
+                `<div class="flex justify-between bg-[#1a1a1a] p-2 rounded text-xs"><span class="font-bold text-white">${tm.name}</span><span class="text-gray-500">${tm.members.length} ppl</span></div>`
+            ).join('');
+
+            // Render Bracket
+            const bracketArea = document.getElementById('det-bracket-area');
+            const bracketGrid = document.getElementById('det-bracket-grid');
+            if(teams.length >= 2) {
+                bracketArea.classList.remove('hidden');
+                let html = '';
+                for(let i=0; i<teams.length; i+=2) {
+                    if(teams[i+1]) {
+                        html += `<div class="flex justify-between items-center bg-[#1a1a1a] p-3 rounded border border-gray-800 text-xs">
+                            <span class="font-bold text-white">${teams[i].name}</span>
+                            <span class="text-gray-600 font-tech">VS</span>
+                            <span class="font-bold text-white">${teams[i+1].name}</span>
+                        </div>`;
+                    }
                 }
+                bracketGrid.innerHTML = html;
+            } else {
+                bracketArea.classList.add('hidden');
             }
-        });
 
-        // --- ADMIN ---
+            // Action Button
+            const actionArea = document.getElementById('det-action-area');
+            actionArea.innerHTML = `<button onclick="openJoin('${id}')" class="btn-nexus w-full shadow-lg">JOIN TOURNAMENT</button>`;
+
+            document.getElementById('drawer-details').classList.add('active');
+        };
+
+        window.openJoin = function(id) {
+            if(!state.player) {
+                // Если нет профиля - кидаем на регу
+                alert("Please create a profile first!");
+                return openReg();
+            }
+            closeAllPanels();
+            const t = state.tournaments[id];
+            const area = document.getElementById('team-action-area');
+            const teams = state.teams[id] ? Object.values(state.teams[id]) : [];
+            
+            // Проверка, вступил ли уже
+            const myTeam = teams.find(tm => tm.members.some(m => m.nick === state.player.nick));
+            
+            if(myTeam) {
+                area.innerHTML = `<div class="bg-green-900/30 p-6 rounded border border-green-500 text-center"><p class="text-green-500 font-bold mb-2">YOU ARE REGISTERED</p><p class="text-sm">Team: ${myTeam.name}</p></div>`;
+            } else if(t.mode === 'solo') {
+                 area.innerHTML = `
+                 <div class="bg-[#111] p-4 rounded border border-gray-800 mb-4 text-center text-sm text-gray-400">Confirm solo participation?</div>
+                 <button onclick="createTeam('${id}', '${state.player.nick}')" class="btn-nexus w-full">CONFIRM JOIN</button>`;
+            } else {
+                // Squad logic
+                area.innerHTML = `
+                <input type="text" id="new-team-name" placeholder="CREATE SQUAD NAME" class="w-full mb-4">
+                <button onclick="createTeam('${id}')" class="btn-nexus w-full mb-6">CREATE & JOIN</button>
+                
+                <p class="text-xs text-center text-gray-500 mb-2 uppercase tracking-widest">OR JOIN EXISTING</p>
+                <div class="space-y-2">
+                    ${teams.filter(tm => tm.members.length < tm.max).map(tm => `
+                        <button onclick="joinTeam('${id}', '${tm.id}')" class="w-full p-4 bg-[#111] border border-gray-800 rounded flex justify-between items-center active:bg-white active:text-black">
+                            <span class="font-bold">${tm.name}</span>
+                            <span class="text-xs">${tm.members.length}/${tm.max}</span>
+                        </button>
+                    `).join('') || '<p class="text-center text-xs text-gray-600">No open squads</p>'}
+                </div>
+                `;
+            }
+            
+            document.getElementById('drawer-team').classList.add('active');
+        };
+
+        // --- ACTIONS ---
+
+        window.handleRegistration = async function() {
+            const nick = document.getElementById('reg-nick').value.trim();
+            const tgVal = document.getElementById('reg-tg').value.trim();
+            
+            if(!nick || !tgVal) return notify("Fill all fields", 'error');
+            
+            let wins = 0;
+            if(state.player && state.player.nick === nick) {
+                wins = state.player.wins; // Сохраняем старые
+            } else {
+                // Проверяем в БД, вдруг юзер уже есть
+                const snap = await get(ref(db, 'users/'+nick));
+                if(snap.exists()) wins = snap.val().wins || 0;
+            }
+
+            const userData = { nick, tg: tgVal, wins };
+            await set(ref(db, 'users/'+nick), userData);
+            
+            state.player = userData;
+            localStorage.setItem('ink_player', JSON.stringify(userData));
+            
+            renderProfile();
+            closeAllPanels();
+            notify("Profile Saved!", "success");
+        };
+
+        window.createTeam = async function(tournId, forceName) {
+            const t = state.tournaments[tournId];
+            const name = forceName || document.getElementById('new-team-name').value.trim().toUpperCase();
+            if(!name) return;
+            
+            const tid = "t_" + Date.now();
+            const data = {
+                id: tid,
+                name: name,
+                members: [{nick: state.player.nick}],
+                max: t.teamSize
+            };
+            
+            await set(ref(db, `teams/${tournId}/${tid}`), data);
+            closeAllPanels();
+            notify("Joined Successfully!", "success");
+        };
+
+        window.joinTeam = async function(tournId, teamId) {
+            const r = ref(db, `teams/${tournId}/${teamId}`);
+            const snap = await get(r);
+            const tm = snap.val();
+            
+            if(tm.members.length >= tm.max) return notify("Squad full", "error");
+            
+            const newMembers = [...tm.members, {nick: state.player.nick}];
+            await update(r, {members: newMembers});
+            
+            closeAllPanels();
+            notify("Joined Squad!", "success");
+        };
+
+        // --- UTILS ---
+        window.closeAllPanels = function() {
+            document.querySelectorAll('.drawer').forEach(d => d.classList.remove('active'));
+            document.getElementById('admin-dashboard').classList.remove('active');
+            document.getElementById('settings-panel').classList.remove('active');
+        };
+
+        window.toggleSettings = function() {
+            document.getElementById('settings-panel').classList.add('active');
+        };
+        
+        // ADMIN UTILS
+        document.getElementById('admin-code').addEventListener('keyup', (e) => {
+             if(e.key === 'Enter' && e.target.value === 'уолтер лучший') {
+                 document.getElementById('admin-dashboard').classList.add('active');
+                 e.target.value = '';
+                 renderAdminList();
+             }
+        });
+        
+        window.logoutAdmin = function() {
+            document.getElementById('admin-dashboard').classList.remove('active');
+        };
+
+        window.saveTournament = async function() {
+             const id = document.getElementById('adm-id').value || "evt_" + Date.now();
+             const data = {
+                 id,
+                 format: document.getElementById('adm-format').value,
+                 prize: document.getElementById('adm-prize').value,
+                 maxPlayers: document.getElementById('adm-max-players').value,
+                 rules: document.getElementById('adm-rules').value,
+                 teamSize: document.getElementById('adm-team-size').value,
+                 mode: state.gameMode
+             };
+             await update(ref(db, `tournaments/${id}`), data);
+             document.getElementById('adm-id').value = ''; // clear id to create new next time
+             notify("Event Saved", "success");
+        };
+
+        window.renderAdminList = function() {
+            const list = Object.values(state.tournaments);
+            document.getElementById('adm-tourn-list').innerHTML = list.map(t => 
+                `<div class="flex justify-between items-center bg-[#222] p-2 rounded text-xs border border-gray-700">
+                    <span>${t.format}</span>
+                    <div class="flex gap-2">
+                        <button onclick="manageMatch('${t.id}')" class="text-green-500 font-bold">MNG</button>
+                        <button onclick="deleteT('${t.id}')" class="text-red-500 font-bold">DEL</button>
+                    </div>
+                 </div>`
+            ).join('');
+        };
+        
+        window.manageMatch = function(id) {
+             const teams = state.teams[id] ? Object.values(state.teams[id]) : [];
+             const panel = document.getElementById('adm-control-panel');
+             panel.classList.remove('hidden');
+             document.getElementById('adm-team-list').innerHTML = teams.map(tm => 
+                 `<div class="flex justify-between items-center bg-[#222] p-2 border-l-2 border-green-500 mb-1">
+                    <span class="text-xs font-bold text-white">${tm.name}</span>
+                    <button onclick="winTeam('${id}', '${tm.id}')" class="text-[10px] bg-green-900 text-green-300 px-2 py-1 rounded">WINNER</button>
+                 </div>`
+             ).join('') || '<p class="text-xs text-gray-500">No participants</p>';
+        };
+
+        window.winTeam = async function(tid, teamId) {
+            if(!confirm("Confirm Win?")) return;
+            // Add logic to add wins to users
+            // Remove tournament
+            await remove(ref(db, `tournaments/${tid}`));
+            await remove(ref(db, `teams/${tid}`));
+            document.getElementById('adm-control-panel').classList.add('hidden');
+            notify("Winner Declared & Event Closed", "success");
+        };
+
+        window.deleteT = async function(id) {
+            if(confirm("Delete?")) {
+                await remove(ref(db, `tournaments/${id}`));
+                await remove(ref(db, `teams/${id}`));
+            }
+        }
+        
         window.setGameMode = function(m) {
             state.gameMode = m;
-            document.getElementById('mode-solo').style.background = m === 'solo' ? 'white' : 'transparent';
-            document.getElementById('mode-solo').style.color = m === 'solo' ? 'black' : 'white';
-            document.getElementById('mode-squad').style.background = m === 'squad' ? 'white' : 'transparent';
-            document.getElementById('mode-squad').style.color = m === 'squad' ? 'black' : 'white';
             document.getElementById('adm-team-size').value = m === 'solo' ? 1 : 2;
-        };
+            document.getElementById('mode-solo').className = m === 'solo' ? 'flex-1 p-2 border border-gray-700 text-xs rounded bg-white text-black' : 'flex-1 p-2 border border-gray-700 text-xs rounded text-white';
+            document.getElementById('mode-squad').className = m === 'squad' ? 'flex-1 p-2 border border-gray-700 text-xs rounded bg-white text-black' : 'flex-1 p-2 border border-gray-700 text-xs rounded text-white';
+        }
 
         window.resetAdminForm = function() {
             document.getElementById('adm-id').value = '';
             document.getElementById('adm-format').value = '';
             document.getElementById('adm-prize').value = '';
-            document.getElementById('adm-max-players').value = '';
             document.getElementById('adm-rules').value = '';
-            document.getElementById('adm-team-size').value = 1;
-            setGameMode('solo');
-            document.getElementById('adm-form-title').innerText = "СОЗДАТЬ ТУРНИР";
-            document.getElementById('adm-save-btn').innerText = "СОЗДАТЬ";
-            document.getElementById('adm-control-panel').classList.add('hidden');
-            state.adminSelectedTournId = null;
         };
 
-        window.editTournament = function(id) {
-            const trn = state.tournaments[id];
-            if(!trn) return;
-            document.getElementById('adm-id').value = id;
-            document.getElementById('adm-format').value = trn.format;
-            document.getElementById('adm-prize').value = trn.prize;
-            document.getElementById('adm-max-players').value = trn.maxPlayers;
-            document.getElementById('adm-rules').value = trn.rules;
-            document.getElementById('adm-team-size').value = trn.teamSize;
-            setGameMode(trn.mode);
-            document.getElementById('adm-form-title').innerText = "РЕДАКТИРОВАТЬ";
-            document.getElementById('adm-save-btn').innerText = "СОХРАНИТЬ";
+        window.notify = function(msg, type) {
+            const d = document.createElement('div');
+            d.className = `p-4 rounded shadow-xl font-bold text-xs text-center border ${type === 'success' ? 'bg-green-900/80 border-green-500 text-white' : 'bg-red-900/80 border-red-500 text-white'}`;
+            d.innerText = msg;
+            document.getElementById('notification-area').appendChild(d);
+            setTimeout(() => d.remove(), 2500);
         };
-
-        window.manageTournament = function(id) {
-            state.adminSelectedTournId = id;
-            renderAdminControlPanel(id);
-        };
-
-        window.renderAdminControlPanel = function(id) {
-            const trn = state.tournaments[id];
-            if(!trn) return;
-            document.getElementById('adm-control-panel').classList.remove('hidden');
-            
-            const trnTeams = state.teams[id] ? Object.values(state.teams[id]) : [];
-            if(trnTeams.length === 0) { 
-                document.getElementById('adm-team-list').innerHTML = `<p class="text-[10px] opacity-30">Нет участников</p>`; 
-                return; 
-            }
-
-            document.getElementById('adm-team-list').innerHTML = trnTeams.map(t => `
-                <div class="flex justify-between items-center p-2 bg-white/5 border-l-2 border-green-500/20">
-                    <div>
-                         <span class="text-[11px] font-bold block">${t.name}</span>
-                         <span class="text-[9px] opacity-50">${t.members.map(m=>m.nick).join(', ')}</span>
-                    </div>
-                    <button onclick="declareWinner('${id}', '${t.id}')" class="px-2 py-1 bg-green-500 text-black text-[9px] font-bold rounded">🏆 WIN</button>
-                </div>
-            `).join('');
-        };
-
-        window.declareWinner = async function(tournId, teamId) {
-            const team = state.teams[tournId][teamId];
-            if(!team) return;
-
-            if(confirm(`Победа ${team.name}?`)) {
-                for(let member of team.members) {
-                    const userRef = ref(db, 'users/' + member.nick);
-                    const snap = await get(userRef);
-                    if(snap.exists()) {
-                        await update(userRef, { wins: (snap.val().wins || 0) + 1 });
-                    } else {
-                        await set(userRef, { nick: member.nick, wins: 1, tg: '-' });
-                    }
-                }
-                notify(`Победа засчитана!`, 'success');
-                if(confirm("Удалить турнир?")) {
-                    await remove(ref(db, `tournaments/${tournId}`));
-                    await remove(ref(db, `teams/${tournId}`));
-                    resetAdminForm();
-                }
-            }
-        };
-
-        window.saveTournament = async function() {
-            const id = document.getElementById('adm-id').value || "tourn_" + Date.now();
-            const data = {
-                id: id,
-                format: document.getElementById('adm-format').value,
-                prize: document.getElementById('adm-prize').value,
-                maxPlayers: document.getElementById('adm-max-players').value,
-                rules: document.getElementById('adm-rules').value,
-                teamSize: document.getElementById('adm-team-size').value,
-                mode: state.gameMode
-            };
-            await update(ref(db, `tournaments/${id}`), data);
-            notify(t('updated'), 'success');
-            resetAdminForm();
-        };
-
-        window.deleteTournament = async function(id) {
-            if(confirm(t('confirm_delete'))) {
-                await remove(ref(db, `tournaments/${id}`));
-                await remove(ref(db, `teams/${id}`));
-                notify(t('deleted'), 'success');
-                if(id === document.getElementById('adm-id').value) resetAdminForm();
-            }
-        };
-
-        window.renderTournamentList = function() {
-            const list = document.getElementById('adm-tourn-list');
-            const tourns = Object.values(state.tournaments);
-            if(tourns.length === 0) { list.innerHTML = `<p class="text-xs opacity-30 text-center py-4">Нет турниров</p>`; return; }
-            list.innerHTML = tourns.map(t => {
-                const count = state.teams[t.id] ? Object.keys(state.teams[t.id]).length : 0;
-                return `
-                <div class="bg-white/5 p-3 flex flex-col gap-2 text-xs border-l-2 border-white/20">
-                    <div class="flex justify-between">
-                        <div><p class="font-bold">${t.format} <span class="opacity-50">(${t.mode})</span></p><p class="opacity-50">${t.prize}</p></div>
-                        <div class="text-right"><p>${count}/${t.maxPlayers}</p></div>
-                    </div>
-                    <div class="flex gap-2 pt-2 border-t border-white/5 mt-1">
-                        <button onclick="manageTournament('${t.id}')" class="flex-1 bg-green-500/20 text-green-500 py-1 text-[9px] font-bold">УПРАВЛЕНИЕ</button>
-                        <button onclick="editTournament('${t.id}')" class="bg-white/10 px-3 py-1 text-[9px]">РЕД</button>
-                        <button onclick="deleteTournament('${t.id}')" class="bg-red-500/20 text-red-500 px-3 py-1 text-[9px]">X</button>
-                    </div>
-                </div>`;
-            }).join('');
-        };
-
-        // --- CLIENT SIDE ---
-        window.renderMainTournaments = function() {
-            const container = document.getElementById('tournaments-container');
-            const tourns = Object.values(state.tournaments);
-            if(tourns.length === 0) {
-                container.innerHTML = `<div class="glass-panel p-10 text-center opacity-20 border-dashed"><p class="font-tech text-xs">${t('no_events')}</p></div>`;
-                return;
-            }
-            container.innerHTML = tourns.map(trn => {
-                const trnTeams = state.teams[trn.id] || {};
-                const totalJoined = Object.keys(trnTeams).length;
-                return `
-                <div class="glass-panel p-1 tournament-card-hover overflow-hidden" onclick="showTournamentDetails('${trn.id}')">
-                    <div class="p-6 md:p-10 flex flex-col md:flex-row justify-between items-center gap-6">
-                        <div class="w-full text-center md:text-left">
-                            <span class="text-[9px] font-black bg-white text-black px-2 py-1 uppercase">${t('active_tourn')}</span>
-                            <h2 class="text-3xl md:text-5xl font-tech mt-4 tracking-tighter">${trn.prize}</h2>
-                            <p class="text-xs mt-2 opacity-50 uppercase tracking-widest">${trn.format} / ${t(trn.mode)}</p>
-                        </div>
-                        <div class="flex flex-col items-center md:items-end w-full md:w-auto">
-                            <div class="text-right mb-4 hidden md:block">
-                                <p class="text-[9px] opacity-30">${t('participants')}</p>
-                                <p class="text-2xl font-tech">${totalJoined} / ${trn.maxPlayers}</p>
-                            </div>
-                            <button class="btn-nexus px-10 py-4 text-xs w-full md:w-auto">${t('about_btn')}</button>
-                        </div>
-                    </div>
-                    <div class="h-1 bg-white/5 w-full"><div class="h-full bg-white transition-all" style="width: ${(totalJoined/trn.maxPlayers)*100}%"></div></div>
-                </div>`;
-            }).join('');
-        };
-
-        window.showTournamentDetails = function(id) {
-            const trn = state.tournaments[id];
-            if(!trn) return;
-            state.currentViewTournId = id;
-            document.getElementById('det-title').innerText = trn.format;
-            document.getElementById('det-prize').innerText = trn.prize;
-            document.getElementById('det-format').innerText = trn.format;
-            document.getElementById('det-rules').innerText = trn.rules;
-            const trnTeams = state.teams[id] ? Object.values(state.teams[id]) : [];
-            document.getElementById('det-count').innerText = `${trnTeams.length} / ${trn.maxPlayers}`;
-            document.getElementById('det-participants').innerHTML = trnTeams.map(tm => `
-                <div class="bg-white/5 p-3 text-[11px] flex justify-between items-center border-b border-white/5">
-                    <span class="font-bold tracking-wider">${tm.name}</span>
-                    <span class="opacity-30">${tm.members.length} чел.</span>
-                </div>
-            `).join('') || `<p class="text-center opacity-20 py-4 text-xs">${t('nobody_joined')}</p>`;
-            const bracketArea = document.getElementById('det-bracket-area');
-            const bracketGrid = document.getElementById('det-bracket-grid');
-            if(trnTeams.length >= 2) {
-                bracketArea.classList.remove('hidden');
-                let html = '';
-                for(let i=0; i<trnTeams.length; i+=2) {
-                    if(trnTeams[i+1]) {
-                        html += `<div class="bg-white/5 p-3 flex justify-between text-[10px] items-center">
-                                    <span class="font-bold">${trnTeams[i].name}</span>
-                                    <span class="opacity-20 font-tech">VS</span>
-                                    <span class="font-bold">${trnTeams[i+1].name}</span>
-                                </div>`;
-                    }
-                }
-                bracketGrid.innerHTML = html;
-            } else { bracketArea.classList.add('hidden'); }
-            document.getElementById('det-action-area').innerHTML = `<button onclick="openJoinMenu('${id}')" class="btn-nexus w-full py-5 shadow-lg" data-lang="join_btn">${t('join_btn')}</button>`;
-            toggleDrawer('drawer-details');
-        };
-
-        window.openJoinMenu = function(tournId) {
-            if(!state.player) return openRegisterDrawer();
-            const trn = state.tournaments[tournId];
-            if(!trn) return;
-            const area = document.getElementById('team-action-area');
-            const trnTeams = state.teams[tournId] ? Object.values(state.teams[tournId]) : [];
-            const myTeam = trnTeams.find(t => t.members.some(m => m.nick === state.player.nick));
-            if (myTeam) {
-                area.innerHTML = `<div class="glass-panel p-6 border-l-4 border-white"><h4 class="font-tech">${myTeam.name}</h4><p class="text-xs opacity-50 mt-4">${t('already_in')}</p></div>`;
-            } else if(trn.mode === 'solo') {
-                area.innerHTML = `<p class="text-sm opacity-50 bg-white/5 p-4 mb-4 rounded border border-white/10">${t('confirm_solo')}</p><button onclick="createTeam('${tournId}', '${state.player.nick}')" class="btn-nexus w-full py-5">${t('confirm')}</button>`;
-            } else {
-                area.innerHTML = `
-                    <input type="text" id="new-team-name" placeholder="${t('team_name_ph')}" class="w-full mb-4">
-                    <button onclick="createTeam('${tournId}')" class="btn-nexus w-full py-4 mb-4">${t('create_squad')}</button>
-                    <div class="relative py-4 text-center opacity-20 text-[10px] uppercase tracking-widest">${t('or_join')}</div>
-                    <div id="joinable-list" class="space-y-2"></div>
-                `;
-                setTimeout(() => {
-                    const joinables = trnTeams.filter(t => t.members.length < t.max);
-                    document.getElementById('joinable-list').innerHTML = joinables.map(t => `<button onclick="joinT('${tournId}', '${t.id}')" class="w-full p-4 bg-white/5 text-xs flex justify-between items-center border border-white/10 hover:bg-white/10 transition"><span class="font-bold">${t.name}</span><span>${t.members.length}/${t.max}</span></button>`).join('') || `<p class="text-xs opacity-20 text-center">${t('no_squads')}</p>`;
-                }, 10);
-            }
-            toggleDrawer('drawer-team');
-        };
-
-        window.createTeam = async function(tournId, customNick) {
-            const name = customNick || document.getElementById('new-team-name').value;
-            if(!name) return;
-            const trn = state.tournaments[tournId];
-            const tid = "t_" + Date.now();
-            const teamData = { id: tid, name: name.toUpperCase(), members: [{nick: state.player.nick}], totalWins: state.player.wins || 0, max: trn.teamSize };
-            await set(ref(db, `teams/${tournId}/${tid}`), teamData);
-            closeAllPanels(); notify(t('you_joined'), 'success');
-        };
-
-        window.joinT = async function(tournId, teamId) {
-            const teamRef = ref(db, `teams/${tournId}/${teamId}`);
-            const tDat = (await get(teamRef)).val();
-            if(!tDat || tDat.members.some(m => m.nick === state.player.nick)) return notify(t('already_in_team'), 'warning');
-            await update(teamRef, { members: [...tDat.members, {nick: state.player.nick}] });
-            closeAllPanels(); notify(t('joined_squad'), 'success');
-        };
-
-        // --- AUTH ---
-        window.openRegisterDrawer = function() {
-            document.getElementById('reg-nick').value = '';
-            document.getElementById('reg-nick').disabled = false;
-            document.getElementById('reg-tg').value = '';
-            document.getElementById('reg-wins').value = '0'; 
-            document.getElementById('reg-wins-container').classList.add('hidden'); // Hide wins on registration
-            document.getElementById('reg-title').innerText = t('create_acc');
-            document.getElementById('reg-btn').innerText = t('done');
-            toggleDrawer('drawer-reg');
-        }
-
-        window.openEditProfile = function() {
-            if(!state.player) return;
-            document.getElementById('reg-nick').value = state.player.nick;
-            document.getElementById('reg-nick').disabled = true; 
-            document.getElementById('reg-tg').value = state.player.tg;
-            document.getElementById('reg-wins').value = state.player.wins || 0; 
-            document.getElementById('reg-wins-container').classList.remove('hidden');
-            document.getElementById('reg-title').innerText = t('edit_profile');
-            document.getElementById('reg-btn').innerText = t('save_changes');
-            toggleDrawer('drawer-reg');
-        }
-
-        window.handleRegistration = async function() {
-            const nick = document.getElementById('reg-nick').value.trim();
-            const tg = document.getElementById('reg-tg').value.trim();
-            const winsInput = document.getElementById('reg-wins').value; 
-            if(!nick || !tg) return notify(t('fill_all_fields'), 'warning');
-            
-            let currentWins = 0;
-            if(state.player && state.player.nick === nick) {
-                 currentWins = parseInt(winsInput) || state.player.wins || 0;
-            } else {
-                const snap = await get(ref(db, 'users/' + nick));
-                if(snap.exists()) {
-                    currentWins = snap.val().wins || 0;
-                }
-            }
-
-            const userData = { nick, tg, wins: currentWins };
-            await set(ref(db, 'users/' + nick), userData);
-            state.player = userData;
-            localStorage.setItem('ink_player', JSON.stringify(userData));
-            renderProfile();
-            closeAllPanels();
-            notify(t('profile_saved'), 'success');
-        };
-
-        window.renderProfile = function() {
-            const card = document.getElementById('profile-card');
-            if(!state.player) { card.innerHTML = `<button onclick="openRegisterDrawer()" class="btn-nexus w-full py-4 text-xs">${t('register')}</button>`; return; }
-            card.innerHTML = `<div class="flex flex-col items-center relative py-2"><div class="absolute top-0 right-0"><button onclick="openEditProfile()" class="btn-icon" title="${t('edit_profile')}"><i class="fas fa-pen text-[10px]"></i></button></div><p class="text-[9px] opacity-30 uppercase">Operator</p><h3 class="font-tech text-3xl my-2 break-all text-center">${state.player.nick}</h3><p class="text-xs text-accent opacity-70 tracking-widest">${state.player.tg}</p><div class="mt-6 pt-4 border-t border-white/5 flex justify-between items-center w-full"><span class="text-xs opacity-50 font-bold">${t('wins')}: ${state.player.wins || 0}</span><span class="text-[10px] text-green-500 font-bold tracking-widest">ONLINE</span></div></div>`;
-        }
-
-        window.renderAdminTools = function() {
-            const cont = document.getElementById('adm-winner-selection');
-            cont.innerHTML = Object.values(state.allPlayers).map(u => `<div class="flex justify-between items-center p-2 bg-white/5 rounded border border-white/5"><span class="text-[10px] font-bold truncate max-w-[80px]">${u.nick}</span><button onclick="addWin('${u.nick}')" class="text-green-500 text-[9px] font-bold tracking-wider hover:bg-green-500/10 p-1 rounded">+ WIN (${u.wins||0})</button></div>`).join('');
-        };
-        window.addWin = async function(n) { 
-            const userRef = ref(db, 'users/'+n);
-            const snap = await get(userRef);
-            if(snap.exists()) { await update(userRef, { wins: (snap.val().wins || 0) + 1 }); }
-            else { await set(userRef, { nick: n, wins: 1, tg: '-' }); }
-        };
-
-        if(state.player) renderProfile();
-        setTimeout(() => updateInterfaceLanguage(), 100);
-    </script>
-
-    <script>
-        let currentLang = 'ru';
-        const langData = {
-            ru: {
-                adm_title: "УПРАВЛЕНИЕ", logout: "ВЫХОД", solo: "СОЛО", squad: "ОТРЯДЫ", adm_delete: "УДАЛИТЬ", adm_create: "СОЗДАТЬ", adm_players: "ИГРОКИ",
-                register: "РЕГИСТРАЦИЯ", no_events: "НЕТ АКТИВНЫХ СОБЫТИЙ", bracket: "СЕТКА МАТЧЕЙ", details: "ДЕТАЛИ", prize: "ПРИЗ", format: "ФОРМАТ", rules: "ПРАВИЛА",
-                participants: "УЧАСТНИКИ", join_btn: "ПРИНЯТЬ УЧАСТИЕ", reg_tourn_title: "РЕГИСТРАЦИЯ", create_acc: "СОЗДАТЬ АККАУНТ", done: "ГОТОВО", settings: "НАСТРОЙКИ",
-                snow_ctrl: "УПРАВЛЕНИЕ СНЕГОМ", snow_toggle: "СНЕГ ВКЛ/ВЫКЛ", snow_spd: "СКОРОСТЬ", theme: "ТЕМА", active_tourn: "АКТИВНЫЙ ТУРНИР", about_btn: "ИНФО",
-                nobody_joined: "Никто еще не записался", ppl_short: "чел.", already_in: "Вы уже в списке.", confirm_solo: "Подтверждаете участие?", confirm: "ПОДТВЕРДИТЬ",
-                team_name_ph: "НАЗВАНИЕ ОТРЯДА", create_squad: "СОЗДАТЬ ОТРЯД", or_join: "ИЛИ ВСТУПИТЬ", no_squads: "Нет свободных отрядов", you_joined: "Вы в игре!",
-                joined_squad: "Вы вступили в отряд", updated: "ОБНОВЛЕНО", confirm_delete: "Удалить этот турнир?", deleted: "Турнир удален", fill_all_fields: "Заполните все поля",
-                wins: "Победы", edit_profile: "РЕДАКТИРОВАТЬ ПРОФИЛЬ", save_changes: "СОХРАНИТЬ", profile_saved: "Профиль сохранен"
-            },
-            en: {
-                adm_title: "MANAGEMENT", logout: "LOGOUT", solo: "SOLO", squad: "SQUADS", adm_delete: "DELETE", adm_create: "CREATE", adm_players: "PLAYERS",
-                register: "REGISTER", no_events: "NO ACTIVE EVENTS", bracket: "MATCH BRACKET", details: "DETAILS", prize: "PRIZE", format: "FORMAT", rules: "RULES",
-                participants: "PARTICIPANTS", join_btn: "JOIN TOURNAMENT", reg_tourn_title: "REGISTRATION", create_acc: "CREATE ACCOUNT", done: "DONE", settings: "SETTINGS",
-                snow_ctrl: "SNOW CONTROL", snow_toggle: "TOGGLE SNOW", snow_spd: "SPEED", theme: "THEME", active_tourn: "ACTIVE TOURNAMENT", about_btn: "INFO",
-                nobody_joined: "No one joined yet", ppl_short: "ppl", already_in: "Already joined.", confirm_solo: "Confirm participation?", confirm: "CONFIRM",
-                team_name_ph: "SQUAD NAME", create_squad: "CREATE SQUAD", or_join: "OR JOIN", no_squads: "No open squads", you_joined: "You are in!",
-                joined_squad: "Joined successfully", updated: "UPDATED", confirm_delete: "Delete this tournament?", deleted: "Deleted", fill_all_fields: "Fill all fields",
-                wins: "Wins", edit_profile: "EDIT PROFILE", save_changes: "SAVE CHANGES", profile_saved: "Profile saved"
-            }
-        };
-
-        function changeLang(l) { currentLang = l; document.documentElement.lang = l; updateInterfaceLanguage(); if(window.renderMainTournaments) window.renderMainTournaments(); if(window.renderProfile) window.renderProfile(); if(window.renderTournamentList) window.renderTournamentList(); }
-        function t(key) { return langData[currentLang][key] || key; }
-        window.t = t; 
-        function updateInterfaceLanguage() { document.querySelectorAll('[data-lang]').forEach(el => { const k = el.getAttribute('data-lang'); if(langData[currentLang][k]) el.innerText = langData[currentLang][k]; }); const inputs = { 'reg-nick': 'NICKNAME', 'new-team-name': langData[currentLang].team_name_ph }; for(let id in inputs) { if(document.getElementById(id)) document.getElementById(id).placeholder = inputs[id]; } }
         
-        function toggleDrawer(id) { 
-            closeAllPanels(); 
-            const el = document.getElementById(id);
-            if(el) el.classList.add('active'); 
-            document.getElementById('overlay').style.display = 'block'; 
-            document.body.classList.add('modal-open'); 
-        }
-        
-        function closeAllPanels() { 
-            document.querySelectorAll('.drawer').forEach(d => d.classList.remove('active')); 
-            const settings = document.getElementById('settings-panel');
-            if(settings) settings.style.transform = 'translateX(100%)'; 
-            document.getElementById('overlay').style.display = 'none'; 
-            document.body.classList.remove('modal-open'); 
-        }
-        
-        function toggleSettings() { 
-            const settings = document.getElementById('settings-panel');
-            if(settings) settings.style.transform = 'translateX(0)'; 
-            document.getElementById('overlay').style.display = 'block'; 
-            document.body.classList.add('modal-open');
-        }
-        
-        function setTheme(t) { document.body.removeAttribute('data-theme'); if(t !== 'void') document.body.setAttribute('data-theme', t); }
-        function notify(m, type) { const el = document.createElement('div'); el.className = `glass-panel p-4 text-[10px] font-bold border-l-4 ${type==='success'?'border-green-500': type==='warning'?'border-yellow-500':'border-red-500'} shadow-xl`; el.innerText = m; document.getElementById('notification-area').appendChild(el); setTimeout(() => el.remove(), 3000); }
-        
-        document.getElementById('admin-code').addEventListener('keypress', (e) => { 
-            if(e.key === 'Enter') {
-                if (e.target.value === 'уолтер лучший') { 
-                    document.getElementById('admin-dashboard').classList.add('active'); 
-                    document.body.classList.add('modal-open');
-                    e.target.value = ''; 
-                    if(window.fillAdminInputs) window.fillAdminInputs(); 
-                } else {
-                    notify('ACCESS DENIED', 'error');
-                }
-            } 
-        });
-        
-        function logoutAdmin() { 
-            document.getElementById('admin-dashboard').classList.remove('active'); 
-            document.body.classList.remove('modal-open');
-        }
-        
-        const canvas = document.getElementById('snow-canvas'); const ctx = canvas.getContext('2d');
-        let snow = [], snowActive = true, snowSpeedMult = 1;
-        window.toggleSnow = () => snowActive = !snowActive;
-        window.setSnowSpeed = (v) => snowSpeedMult = parseFloat(v);
-        window.changeLang = changeLang;
-        
-        function resize() { 
-            canvas.width = window.innerWidth; 
-            canvas.height = window.innerHeight; 
-        }
-        window.onresize = resize; resize();
-        
-        function initSnow() { snow = []; const cnt = Math.min(100, window.innerWidth/5); for(let i=0; i<cnt; i++) snow.push({x:Math.random()*canvas.width, y:Math.random()*canvas.height, s:Math.random()*2, v:Math.random()*1+0.5}); }
-        initSnow();
-        function anim() { ctx.clearRect(0,0,canvas.width,canvas.height); if(snowActive) { ctx.fillStyle = "white"; ctx.globalAlpha = 0.15; snow.forEach(p => { p.y += p.v * snowSpeedMult; if(p.y > canvas.height) { p.y = -10; p.x = Math.random() * canvas.width; } ctx.beginPath(); ctx.arc(p.x, p.y, p.s, 0, Math.PI*2); ctx.fill(); }); } requestAnimationFrame(anim); }
-        anim();
-        window.addEventListener('resize', initSnow);
-
-        // MOBILE KEYBOARD FIX
-        // Когда фокус на инпуте, скроллим его в центр, чтобы клавиатура не закрывала
-        const inputs = document.querySelectorAll('input');
-        inputs.forEach(input => {
-            input.addEventListener('focus', () => {
-                setTimeout(() => {
-                    input.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }, 300); // Задержка для анимации клавиатуры
-            });
-        });
+        // Initial render
+        renderProfile();
+        renderList();
     </script>
 </body>
 </html>
