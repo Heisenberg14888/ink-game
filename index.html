@@ -99,14 +99,17 @@
         @keyframes pulse-gold { 0% { box-shadow: 0 0 0 rgba(234, 179, 8, 0); } 50% { box-shadow: 0 0 15px rgba(234, 179, 8, 0.3); } 100% { box-shadow: 0 0 0 rgba(234, 179, 8, 0); } }
         
         /* Loading Overlay */
-        #loader { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; justify-content: center; align-items: center; }
+        #loader { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px; }
     </style>
 </head>
 <body>
     <canvas id="snow-canvas"></canvas>
     
     <!-- Loader -->
-    <div id="loader"><i class="fas fa-circle-notch fa-spin text-4xl text-white"></i></div>
+    <div id="loader">
+        <i class="fas fa-circle-notch fa-spin text-4xl text-white"></i>
+        <p class="text-xs text-gray-500 mt-2">Connecting...</p>
+    </div>
 
     <!-- Admin Pull Tab (Visible only to Admin) -->
     <div id="admin-trigger" class="admin-pull-tab" onclick="toggleAdmin()"></div>
@@ -266,22 +269,24 @@
     </div>
 
     <script type="module">
+        // --- ВАЖНОЕ ИСПРАВЛЕНИЕ: ИСПОЛЬЗУЕМ CDN ИМПОРТЫ ДЛЯ БРАУЗЕРА ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, set, onValue, update, remove, get, push, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // --- CONFIG ---
-        // ЗАМЕНИ НА СВОЙ ID ЧТОБЫ РАБОТАЛА АДМИНКА
-        const ADMIN_IDS = [5501685605, 7654321]; 
-        
+        // --- ВАШ КОНФИГ ---
+        // Вставлен из вашего сообщения
         const firebaseConfig = {
             apiKey: "AIzaSyCK7gn8Xl-AW93FTni7q7Rx1QTUw0ILiCs",
             authDomain: "ink-game-843c1.firebaseapp.com",
             databaseURL: "https://ink-game-843c1-default-rtdb.europe-west1.firebasedatabase.app",
             projectId: "ink-game-843c1",
-            storageBucket: "ink-game-843c1.appspot.com", 
+            storageBucket: "ink-game-843c1.firebasestorage.app",
             messagingSenderId: "547943681956",
-            appId: "1:547943681956:web:aa7db2830eca6438f7fb31"
+            appId: "1:547943681956:web:aa7db2830eca6438f7fb31",
+            measurementId: "G-BPW1BM3H1N"
         };
+
+        const ADMIN_IDS = [5501685605]; // ЗАМЕНИТЕ НА СВОЙ ID, ЕСЛИ ОН ДРУГОЙ
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
@@ -293,9 +298,17 @@
         tg.setHeaderColor('#000000');
         tg.setBackgroundColor('#000000');
 
+        // --- DEBUGGING ---
+        window.onerror = function(msg, url, line) {
+            // Раскомментируйте, если нужно видеть ошибки на телефоне
+            // alert("Err: " + msg);
+        };
+
         // --- STATE ---
         let user = tg.initDataUnsafe?.user || { id: 999, first_name: "Guest", username: "guest", photo_url: "" }; 
-        // user = { id: 5501685605, first_name: "Admin", username: "admin", photo_url: "" }; // UNCOMMENT TO TEST ADMIN ON PC
+        
+        // Uncomment to test admin on PC if you are not in Telegram
+        // user = { id: 5501685605, first_name: "Admin", username: "admin", photo_url: "" }; 
 
         let dbUser = null;
         let selectedDevice = null;
@@ -315,6 +328,16 @@
         window.onload = async () => {
             initSnow();
             
+            // --- ЗАЩИТА ОТ БЕСКОНЕЧНОЙ ЗАГРУЗКИ ---
+            setTimeout(() => {
+                const loader = document.getElementById('loader');
+                if(loader && loader.style.display !== 'none') {
+                    console.warn("Forcing loader hide (Timeout)");
+                    loader.style.display = 'none';
+                }
+            }, 4000); 
+            // -------------------------------------
+
             // Check Admin
             if(ADMIN_IDS.includes(user.id)) {
                 document.getElementById('admin-trigger').style.display = 'block';
@@ -329,8 +352,12 @@
                     renderProfile();
                     checkDaily();
                 } else {
+                    document.getElementById('loader').style.display = 'none';
                     openDrawer('drawer-reg');
                 }
+            }, (error) => {
+                console.error(error);
+                document.getElementById('loader').style.display = 'none';
             });
 
             // Load Tournaments
@@ -411,9 +438,6 @@
                 const amIOwner = myTeam.owner_id == user.id;
                 
                 let membersHTML = '';
-                // Fetch member details (async is hard in render, so we store minimal data in team or fetch)
-                // For this demo, let's assume team.members stores basic info OR we just list IDs. 
-                // Better: We store {nick, device, wins, avatar} inside members for easy rendering.
                 
                 Object.values(myTeam.members).forEach(m => {
                     const isOwner = myTeam.owner_id == m.id;
@@ -463,7 +487,6 @@
                 const openTeams = Object.values(teams).filter(t => !t.locked && Object.keys(t.members).length < tourn.team_size);
                 
                 openTeams.forEach(t => {
-                    // Find owner info from members
                     const owner = t.members[t.owner_id];
                     teamsListHTML += `
                     <div class="bg-white/5 p-3 rounded mb-2 flex justify-between items-center">
@@ -540,8 +563,6 @@
                     team.members[reqId] = team.requests[reqId];
                     delete team.requests[reqId];
                     
-                    // Check Lock (Hardcoded check for 2x2 for demo, can use dynamic size)
-                    // In real app, pass teamSize to this func
                     if(Object.keys(team.members).length >= 2) team.locked = true; 
                 }
                 return team;
