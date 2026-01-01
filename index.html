@@ -45,33 +45,15 @@
         .drawer-content { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 150px; }
         .drawer-header { padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #000; z-index: 10; }
 
-        /* --- SPECIAL REGISTRATION DRAWER FIX --- */
-        #drawer-reg {
-            z-index: 9999 !important; /* Поверх всего */
-            background: #000;
-        }
-        #drawer-reg .drawer-content {
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start; /* Прижимаем к верху */
-            padding-top: 40px; /* Отступ сверху */
-        }
+        /* Reg Drawer Fix */
+        #drawer-reg { z-index: 9999 !important; background: #000; }
+        #drawer-reg .drawer-content { display: flex; flex-direction: column; justify-content: flex-start; padding-top: 40px; }
         
-        /* High Visibility Input */
         .reg-input-fix {
-            background: #222 !important;
-            border: 2px solid #555 !important;
-            color: white !important;
-            font-size: 24px !important; /* Крупный текст */
-            padding: 20px !important;
-            border-radius: 12px;
-            width: 100%;
-            margin-bottom: 20px;
+            background: #222 !important; border: 2px solid #555 !important; color: white !important;
+            font-size: 24px !important; padding: 20px !important; border-radius: 12px; width: 100%; margin-bottom: 20px;
         }
-        .reg-input-fix:focus {
-            border-color: #fff !important;
-            background: #333 !important;
-        }
+        .reg-input-fix:focus { border-color: #fff !important; background: #333 !important; }
 
         /* Bottom Profile */
         #bottom-profile {
@@ -137,13 +119,22 @@
     <div id="admin-curtain" class="p-6 pb-40">
         <div class="flex justify-between items-center mb-6 pt-4">
             <h2 class="font-tech text-xl text-red-500">ADMIN PANEL</h2>
-            <button onclick="toggleAdmin()" class="text-sm border border-white/20 px-4 py-2 rounded bg-white/10">CLOSE</button>
+            <button onclick="toggleAdmin()" class="text-sm border border-white/20 px-4 py-2 rounded bg-white/10" data-lang="close">CLOSE</button>
         </div>
         <div class="space-y-6">
             <div class="card">
                 <h3 class="font-bold mb-4 text-sm text-center">CREATE TOURNAMENT</h3>
-                <input id="adm-format" class="input-nexus mb-3" placeholder="Format (e.g. 2x2)">
-                <input id="adm-prize" class="input-nexus mb-3" placeholder="Prize (e.g. 1000 Gems)">
+                
+                <label class="text-[10px] uppercase opacity-50 block mb-1">Format</label>
+                <input id="adm-format" class="input-nexus mb-3" placeholder="e.g. 2x2">
+                
+                <!-- NEW PRIZE SYSTEM -->
+                <label class="text-[10px] uppercase opacity-50 block mb-1">Prize (Fill one or both)</label>
+                <div class="flex gap-2 mb-3">
+                    <input id="adm-prize-rbx" type="number" class="input-nexus" placeholder="Robux Amount">
+                    <input id="adm-prize-gems" type="number" class="input-nexus" placeholder="Gems Amount">
+                </div>
+
                 <label class="text-[10px] uppercase opacity-50 block mb-1">Team Size</label>
                 <select id="adm-team-size" class="input-nexus mb-4">
                     <option value="1">Solo (1)</option>
@@ -166,14 +157,19 @@
         <header class="flex justify-between items-center mb-8 pt-4">
             <div>
                 <h1 class="text-3xl font-tech font-bold">INK<span class="opacity-30">OS</span></h1>
-                <p class="text-[10px] opacity-50 tracking-widest uppercase">Tournament Platform</p>
+                <p class="text-[10px] opacity-50 tracking-widest uppercase" data-lang="subtitle">Tournament Platform</p>
             </div>
-            <button onclick="openDrawer('drawer-shop')" class="w-12 h-12 bg-white/5 rounded flex items-center justify-center border border-white/10 active:scale-95 transition">
-                <i class="fas fa-shopping-cart text-yellow-500"></i>
-            </button>
+            <div class="flex gap-2">
+                <!-- Lang Switcher -->
+                <button onclick="toggleLang()" class="w-12 h-12 bg-white/5 rounded flex items-center justify-center border border-white/10 font-bold text-xs" id="lang-btn">RU</button>
+                <!-- Shop Button -->
+                <button onclick="openDrawer('drawer-shop')" class="w-12 h-12 bg-white/5 rounded flex items-center justify-center border border-white/10 active:scale-95 transition">
+                    <i class="fas fa-shopping-cart text-yellow-500"></i>
+                </button>
+            </div>
         </header>
 
-        <h2 class="text-xs font-bold opacity-50 mb-3 uppercase">Active Events</h2>
+        <h2 class="text-xs font-bold opacity-50 mb-3 uppercase" data-lang="active_events">Active Events</h2>
         <div id="tournaments-list" class="space-y-3"></div>
     </div>
 
@@ -199,42 +195,36 @@
                     <span class="font-bold"><i class="fas fa-gem text-blue-400 mr-1"></i><span id="prof-gems">0</span></span>
                 </div>
             </div>
-            <button onclick="openDrawer('drawer-inventory')" class="p-3 text-xs border border-white/20 rounded font-bold active:bg-white active:text-black">INV</button>
+            <button onclick="openDrawer('drawer-inventory')" class="p-3 text-xs border border-white/20 rounded font-bold active:bg-white active:text-black" data-lang="inv">INV</button>
         </div>
     </div>
 
-    <!-- REGISTRATION DRAWER (COMPLETELY REDESIGNED) -->
+    <!-- REGISTRATION DRAWER -->
     <div id="drawer-reg" class="drawer">
-        <!-- No header, just content starting from top -->
         <div class="drawer-content">
-            <h2 class="font-tech text-3xl text-center mb-2 mt-4">WELCOME</h2>
-            <p class="text-center text-sm opacity-50 mb-8">Setup your profile to begin</p>
+            <h2 class="font-tech text-3xl text-center mb-2 mt-4" data-lang="welcome">WELCOME</h2>
+            <p class="text-center text-sm opacity-50 mb-8" data-lang="setup_profile">Setup your profile to begin</p>
             
-            <!-- STEP 1 -->
             <div class="mb-8">
-                <label class="text-xs font-bold uppercase mb-3 block text-gray-400 pl-1">1. Choose Platform</label>
+                <label class="text-xs font-bold uppercase mb-3 block text-gray-400 pl-1" data-lang="choose_platform">1. Choose Platform</label>
                 <div class="flex gap-3">
                     <button onclick="selectDevice('mobile')" id="dev-mobile" class="flex-1 p-6 border border-white/20 rounded-xl bg-[#111] opacity-50 transition active:scale-95">
-                        <i class="fas fa-mobile-alt text-3xl mb-2"></i><br><span class="font-bold">PHONE</span>
+                        <i class="fas fa-mobile-alt text-3xl mb-2"></i><br><span class="font-bold" data-lang="phone">PHONE</span>
                     </button>
                     <button onclick="selectDevice('pc')" id="dev-pc" class="flex-1 p-6 border border-white/20 rounded-xl bg-[#111] opacity-50 transition active:scale-95">
-                        <i class="fas fa-desktop text-3xl mb-2"></i><br><span class="font-bold">PC</span>
+                        <i class="fas fa-desktop text-3xl mb-2"></i><br><span class="font-bold" data-lang="pc">PC</span>
                     </button>
                 </div>
             </div>
 
-            <!-- STEP 2 -->
             <div class="mb-8">
-                <label class="text-xs font-bold uppercase mb-3 block text-gray-400 pl-1">2. Total Wins</label>
-                <!-- BIG VISIBLE INPUT -->
+                <label class="text-xs font-bold uppercase mb-3 block text-gray-400 pl-1" data-lang="total_wins">2. Total Wins</label>
                 <input id="reg-wins" type="tel" inputmode="numeric" class="reg-input-fix" placeholder="0" onfocus="scrollToInput(this)">
             </div>
 
             <button onclick="completeRegistration()" class="btn-nexus py-5 text-lg shadow-lg shadow-white/10">
-                START OS <i class="fas fa-arrow-right ml-2"></i>
+                <span data-lang="start_os">START OS</span> <i class="fas fa-arrow-right ml-2"></i>
             </button>
-            
-            <!-- Spacer for scroll -->
             <div class="h-[300px]"></div>
         </div>
     </div>
@@ -242,7 +232,7 @@
     <!-- Drawer: Tournament / Teams -->
     <div id="drawer-team" class="drawer">
         <div class="drawer-header">
-            <h2 class="font-tech" id="tm-title">TEAMS</h2>
+            <h2 class="font-tech" id="tm-title" data-lang="teams">TEAMS</h2>
             <button onclick="closeDrawer('drawer-team')" class="p-2"><i class="fas fa-times text-xl"></i></button>
         </div>
         <div class="drawer-content" id="team-content"></div>
@@ -251,28 +241,26 @@
     <!-- Drawer: Shop -->
     <div id="drawer-shop" class="drawer">
         <div class="drawer-header">
-            <h2 class="font-tech text-yellow-500">SHOP</h2>
+            <h2 class="font-tech text-yellow-500" data-lang="shop">SHOP</h2>
             <button onclick="closeDrawer('drawer-shop')" class="p-2"><i class="fas fa-times text-xl"></i></button>
         </div>
         <div class="drawer-content">
             <div class="card border-yellow-500/30 bg-yellow-900/10 text-center relative overflow-hidden">
-                <div class="absolute top-0 right-0 bg-yellow-500 text-black text-[9px] font-bold px-2 py-1">DAILY</div>
-                <h3 class="font-tech text-xl mt-2">FREE CASE</h3>
-                <p class="text-xs opacity-50 mb-4">Common - Rare Titles</p>
-                <button id="btn-daily" onclick="openLootbox('daily')" class="btn-nexus text-xs py-3">OPEN FREE</button>
-                <p id="daily-timer" class="text-[10px] mt-2 opacity-50 hidden">Cooldown active</p>
+                <div class="absolute top-0 right-0 bg-yellow-500 text-black text-[9px] font-bold px-2 py-1" data-lang="daily">DAILY</div>
+                <h3 class="font-tech text-xl mt-2" data-lang="free_case">FREE CASE</h3>
+                <p class="text-xs opacity-50 mb-4" data-lang="common_rare">Common - Rare Titles</p>
+                <button id="btn-daily" onclick="openLootbox('daily')" class="btn-nexus text-xs py-3" data-lang="open_free">OPEN FREE</button>
+                <p id="daily-timer" class="text-[10px] mt-2 opacity-50 hidden" data-lang="cooldown">Cooldown active</p>
             </div>
 
             <div class="card border-purple-500/30 bg-purple-900/10 text-center">
-                <h3 class="font-tech text-xl mt-2 text-purple-400">PREMIUM CASE</h3>
-                <p class="text-xs opacity-50 mb-4">Chance for Secret Titles</p>
-                <button onclick="openLootbox('premium')" class="btn-nexus bg-purple-600 text-white border-none text-xs py-3">OPEN (100 GEMS)</button>
+                <h3 class="font-tech text-xl mt-2 text-purple-400" data-lang="premium_case">PREMIUM CASE</h3>
+                <p class="text-xs opacity-50 mb-4" data-lang="chance_secret">Chance for Secret Titles</p>
+                <button onclick="openLootbox('premium')" class="btn-nexus bg-purple-600 text-white border-none text-xs py-3" id="btn-premium">OPEN (100 GEMS)</button>
             </div>
             
-            <div class="mt-8 text-[10px] opacity-50 text-center">
-                <p>Common: 50% | Uncommon: 30%</p>
-                <p>Rare: 15% | Ultra: 4% | Covert: 0.9%</p>
-                <p class="text-yellow-500">Secret: 0.1%</p>
+            <div class="mt-8 text-[10px] opacity-50 text-center" id="drop-rates">
+                <!-- JS will populate -->
             </div>
         </div>
     </div>
@@ -280,7 +268,7 @@
     <!-- Drawer: Inventory -->
     <div id="drawer-inventory" class="drawer">
         <div class="drawer-header">
-            <h2 class="font-tech">INVENTORY</h2>
+            <h2 class="font-tech" data-lang="inventory">INVENTORY</h2>
             <button onclick="closeDrawer('drawer-inventory')" class="p-2"><i class="fas fa-times text-xl"></i></button>
         </div>
         <div class="drawer-content" id="inventory-list"></div>
@@ -295,6 +283,184 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, set, onValue, update, remove, get, push, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+        // --- LOCALIZATION CONFIG ---
+        let currentLang = localStorage.getItem('ink_lang') || 'ru';
+        
+        const translations = {
+            en: {
+                subtitle: "Tournament Platform",
+                active_events: "Active Events",
+                welcome: "WELCOME",
+                setup_profile: "Setup your profile to begin",
+                choose_platform: "1. Choose Platform",
+                phone: "PHONE",
+                pc: "PC",
+                total_wins: "2. Total Wins",
+                start_os: "START OS",
+                teams: "TEAMS",
+                shop: "SHOP",
+                daily: "DAILY",
+                free_case: "FREE CASE",
+                common_rare: "Common - Rare Titles",
+                open_free: "OPEN FREE",
+                cooldown: "Cooldown active",
+                premium_case: "PREMIUM CASE",
+                chance_secret: "Chance for Secret Titles",
+                inventory: "INVENTORY",
+                inv: "INV",
+                no_active: "No Active Events",
+                live: "LIVE",
+                solo: "SOLO",
+                duo: "DUO",
+                squad: "SQUAD",
+                loading: "Loading...",
+                kick: "KICK",
+                requests: "REQUESTS",
+                yes: "YES",
+                no: "NO",
+                leave_team: "LEAVE TEAM",
+                creator: "Creator",
+                join: "JOIN",
+                create_team: "CREATE TEAM",
+                new_team_name: "New Team Name",
+                or_join: "OR JOIN",
+                no_open_teams: "No open teams",
+                select_device: "Select Device!",
+                enter_wins: "Enter Wins!",
+                wait_cooldown: "Wait for cooldown",
+                not_enough_gems: "Not enough Gems",
+                you_got: "YOU GOT",
+                equipped: "Equipped!",
+                created: "Created",
+                sent: "Sent",
+                user_not_found: "User not found",
+                close: "CLOSE",
+                select_new_owner: "SELECT NEW OWNER",
+                open_premium: "OPEN (100 GEMS)",
+                delete_team: "Delete team?",
+                leave_team_confirm: "Leave team?",
+                kick_user: "Kick user?",
+                request_sent: "Request sent!",
+                enter_name: "Enter name",
+                common: "Common",
+                uncommon: "Uncommon",
+                rare: "Rare",
+                ultra: "Ultra",
+                covert: "Covert",
+                secret: "Secret",
+                no_title: "NO TITLE"
+            },
+            ru: {
+                subtitle: "Турнирная Платформа",
+                active_events: "Активные События",
+                welcome: "ДОБРО ПОЖАЛОВАТЬ",
+                setup_profile: "Создайте профиль для начала",
+                choose_platform: "1. Выберите Платформу",
+                phone: "ТЕЛЕФОН",
+                pc: "ПК",
+                total_wins: "2. Количество Побед",
+                start_os: "ЗАПУСК OS",
+                teams: "КОМАНДЫ",
+                shop: "МАГАЗИН",
+                daily: "ЕЖЕДНЕВНО",
+                free_case: "БЕСПЛАТНЫЙ КЕЙС",
+                common_rare: "Обычные - Редкие Титулы",
+                open_free: "ОТКРЫТЬ",
+                cooldown: "Ожидание",
+                premium_case: "ПРЕМИУМ КЕЙС",
+                chance_secret: "Шанс на Секретные Титулы",
+                inventory: "ИНВЕНТАРЬ",
+                inv: "ИНВ",
+                no_active: "Нет активных событий",
+                live: "ИДЕТ",
+                solo: "СОЛО",
+                duo: "ДУО",
+                squad: "ОТРЯД",
+                loading: "Загрузка...",
+                kick: "КИК",
+                requests: "ЗАЯВКИ",
+                yes: "ДА",
+                no: "НЕТ",
+                leave_team: "ПОКИНУТЬ",
+                creator: "Создатель",
+                join: "ВСТУПИТЬ",
+                create_team: "СОЗДАТЬ",
+                new_team_name: "Название команды",
+                or_join: "ИЛИ ВСТУПИТЬ",
+                no_open_teams: "Нет открытых команд",
+                select_device: "Выберите устройство!",
+                enter_wins: "Введите победы!",
+                wait_cooldown: "Подождите восстановления",
+                not_enough_gems: "Недостаточно Гемов",
+                you_got: "ВЫ ПОЛУЧИЛИ",
+                equipped: "Надето!",
+                created: "Создано",
+                sent: "Отправлено",
+                user_not_found: "Пользователь не найден",
+                close: "ЗАКРЫТЬ",
+                select_new_owner: "ВЫБРАТЬ ЛИДЕРА",
+                open_premium: "ОТКРЫТЬ (100 ГЕМОВ)",
+                delete_team: "Удалить команду?",
+                leave_team_confirm: "Покинуть команду?",
+                kick_user: "Исключить игрока?",
+                request_sent: "Заявка отправлена!",
+                enter_name: "Введите название",
+                common: "Обычный",
+                uncommon: "Необычный",
+                rare: "Редкий",
+                ultra: "Ультра",
+                covert: "Тайный",
+                secret: "Секретный",
+                no_title: "НЕТ ТИТУЛА"
+            }
+        };
+
+        function t(key) {
+            return translations[currentLang][key] || key;
+        }
+
+        window.toggleLang = () => {
+            currentLang = currentLang === 'ru' ? 'en' : 'ru';
+            localStorage.setItem('ink_lang', currentLang);
+            updateUI();
+        };
+
+        function updateUI() {
+            document.getElementById('lang-btn').innerText = currentLang.toUpperCase();
+            
+            // Update static elements
+            document.querySelectorAll('[data-lang]').forEach(el => {
+                const key = el.getAttribute('data-lang');
+                if(translations[currentLang][key]) el.innerText = translations[currentLang][key];
+            });
+
+            // Update placeholders
+            const placeholders = {
+                'reg-wins': currentLang === 'ru' ? '0' : '0',
+                'new-team-name': t('new_team_name'),
+                'adm-format': "Format (e.g. 2x2)",
+                'adm-user-id': "Telegram ID",
+                'adm-amount': "Amount"
+            };
+            
+            // Specific updates
+            document.getElementById('btn-premium').innerText = t('open_premium');
+            
+            // Drop rates
+            const rates = `
+                <p class="mb-1">${t('common')}: 50% | ${t('uncommon')}: 30%</p>
+                <p class="mb-1">${t('rare')}: 15% | ${t('ultra')}: 4% | ${t('covert')}: 0.9%</p>
+                <p class="text-yellow-500 font-bold">${t('secret')}: 0.1%</p>
+            `;
+            document.getElementById('drop-rates').innerHTML = rates;
+
+            // Re-render dynamic parts if data exists
+            if(dbUser) renderProfile();
+            // Force re-render of tournament list (needs snapshot, tricky, but works on next update)
+            // Ideally we would trigger a refresh, but Firebase listener will handle updates automatically
+        }
+
+        // --- FIREBASE CONFIG ---
         const firebaseConfig = {
             apiKey: "AIzaSyCK7gn8Xl-AW93FTni7q7Rx1QTUw0ILiCs",
             authDomain: "ink-game-843c1.firebaseapp.com",
@@ -336,6 +502,7 @@
 
         window.onload = async () => {
             initSnow();
+            updateUI(); // Set initial language
             
             setTimeout(() => {
                 const loader = document.getElementById('loader');
@@ -382,10 +549,10 @@
             const winsInp = document.getElementById('reg-wins');
             const wins = winsInp.value;
             
-            if(!selectedDevice) return alert('Select Device!');
+            if(!selectedDevice) return alert(t('select_device'));
             if(!wins) {
                 winsInp.focus();
-                return alert('Enter Wins!');
+                return alert(t('enter_wins'));
             }
 
             const newUser = {
@@ -407,16 +574,20 @@
         function renderTournaments(snap) {
             const list = document.getElementById('tournaments-list');
             list.innerHTML = '';
-            if(!snap.exists()) return list.innerHTML = '<div class="opacity-30 text-center p-4">No Active Events</div>';
+            if(!snap.exists()) return list.innerHTML = `<div class="opacity-30 text-center p-4">${t('no_active')}</div>`;
             
             snap.forEach(child => {
-                const t = child.val();
+                const trn = child.val();
+                let modeText = t('solo');
+                if(trn.mode == 2) modeText = t('duo');
+                if(trn.mode == 4) modeText = t('squad');
+
                 list.innerHTML += `
-                <div onclick="openTournament('${t.id}')" class="card active:scale-95 transition cursor-pointer flex justify-between items-center">
+                <div onclick="openTournament('${trn.id}')" class="card active:scale-95 transition cursor-pointer flex justify-between items-center">
                     <div>
-                        <div class="flex gap-2 mb-1"><span class="bg-red-900/50 text-red-300 text-[9px] px-1 rounded">LIVE</span></div>
-                        <h3 class="font-tech text-lg">${t.prize}</h3>
-                        <p class="text-xs opacity-50">${t.format} / ${t.mode == 1 ? 'SOLO' : (t.mode == 2 ? 'DUO' : 'SQUAD')}</p>
+                        <div class="flex gap-2 mb-1"><span class="bg-red-900/50 text-red-300 text-[9px] px-1 rounded">${t('live')}</span></div>
+                        <h3 class="font-tech text-lg">${trn.prize}</h3>
+                        <p class="text-xs opacity-50">${trn.format} / ${modeText}</p>
                     </div>
                     <i class="fas fa-chevron-right opacity-30"></i>
                 </div>`;
@@ -426,11 +597,11 @@
         window.openTournament = async (tid) => {
             openDrawer('drawer-team');
             const content = document.getElementById('team-content');
-            content.innerHTML = '<div class="text-center p-4"><i class="fas fa-circle-notch fa-spin"></i></div>';
+            content.innerHTML = `<div class="text-center p-4">${t('loading')}</div>`;
             const tSnap = await get(ref(db, `tournaments/${tid}`));
-            const t = tSnap.val();
+            const trn = tSnap.val();
             onValue(ref(db, `teams/${tid}`), (snap) => {
-                renderTeamUI(tid, t, snap.val() || {});
+                renderTeamUI(tid, trn, snap.val() || {});
             });
         };
 
@@ -452,13 +623,13 @@
                                 <p class="text-[9px] opacity-50"><i class="fas fa-${m.device == 'pc' ? 'desktop' : 'mobile-alt'}"></i> Wins: ${m.wins}</p>
                             </div>
                         </div>
-                        ${amIOwner && !isOwner ? `<button onclick="kickMember('${tid}', '${myTeam.id}', '${m.id}')" class="text-red-500 text-xs px-2">KICK</button>` : ''}
+                        ${amIOwner && !isOwner ? `<button onclick="kickMember('${tid}', '${myTeam.id}', '${m.id}')" class="text-red-500 text-xs px-2">${t('kick')}</button>` : ''}
                     </div>`;
                 });
 
                 let requestsHTML = '';
                 if(amIOwner && myTeam.requests) {
-                    requestsHTML = `<div class="mt-4 border-t border-white/10 pt-4"><h4 class="text-xs font-bold mb-2 text-yellow-500">REQUESTS</h4>`;
+                    requestsHTML = `<div class="mt-4 border-t border-white/10 pt-4"><h4 class="text-xs font-bold mb-2 text-yellow-500">${t('requests')}</h4>`;
                     Object.values(myTeam.requests).forEach(req => {
                         requestsHTML += `
                         <div class="flex justify-between items-center bg-yellow-900/10 border border-yellow-500/20 p-2 rounded mb-2">
@@ -467,8 +638,8 @@
                                 <div><p class="text-[10px] font-bold">${req.name}</p><p class="text-[9px] opacity-50">${req.wins}W</p></div>
                             </div>
                             <div class="flex gap-1">
-                                <button onclick="acceptRequest('${tid}', '${myTeam.id}', '${req.id}')" class="bg-green-500 text-black text-[9px] px-2 py-1 rounded">YES</button>
-                                <button onclick="declineRequest('${tid}', '${myTeam.id}', '${req.id}')" class="bg-red-500 text-white text-[9px] px-2 py-1 rounded">NO</button>
+                                <button onclick="acceptRequest('${tid}', '${myTeam.id}', '${req.id}')" class="bg-green-500 text-black text-[9px] px-2 py-1 rounded">${t('yes')}</button>
+                                <button onclick="declineRequest('${tid}', '${myTeam.id}', '${req.id}')" class="bg-red-500 text-white text-[9px] px-2 py-1 rounded">${t('no')}</button>
                             </div>
                         </div>`;
                     });
@@ -480,7 +651,7 @@
                         <h3 class="font-tech text-lg text-center mb-4">${myTeam.name}</h3>
                         ${membersHTML}
                         ${requestsHTML}
-                        <button onclick="leaveTeam('${tid}', '${myTeam.id}', ${amIOwner})" class="btn-nexus bg-red-900/50 text-red-200 mt-4 border border-red-500/30">LEAVE TEAM</button>
+                        <button onclick="leaveTeam('${tid}', '${myTeam.id}', ${amIOwner})" class="btn-nexus bg-red-900/50 text-red-200 mt-4 border border-red-500/30">${t('leave_team')}</button>
                     </div>
                 `;
             } else {
@@ -495,20 +666,20 @@
                             <img src="${owner.avatar}" class="w-8 h-8 rounded-full border border-white/10">
                             <div>
                                 <p class="text-xs font-bold">${t.name}</p>
-                                <p class="text-[9px] opacity-50">Creator: ${owner.name} (${owner.wins}W)</p>
+                                <p class="text-[9px] opacity-50">${t('creator')}: ${owner.name} (${owner.wins}W)</p>
                             </div>
                         </div>
-                        <button onclick="sendJoinRequest('${tid}', '${t.id}')" class="px-3 py-1 bg-white text-black text-[10px] font-bold rounded">JOIN</button>
+                        <button onclick="sendJoinRequest('${tid}', '${t.id}')" class="px-3 py-1 bg-white text-black text-[10px] font-bold rounded">${t('join')}</button>
                     </div>`;
                 });
 
                 content.innerHTML = `
                     <div class="p-2">
-                        <input id="new-team-name" class="input-nexus mb-2" placeholder="New Team Name">
-                        <button onclick="createTeam('${tid}', ${tourn.team_size})" class="btn-nexus mb-6">CREATE TEAM</button>
-                        <div class="flex items-center gap-2 mb-2 opacity-50"><div class="h-[1px] bg-white w-full"></div><span class="text-[9px] whitespace-nowrap">OR JOIN</span><div class="h-[1px] bg-white w-full"></div></div>
+                        <input id="new-team-name" class="input-nexus mb-2" placeholder="${t('new_team_name')}">
+                        <button onclick="createTeam('${tid}', ${tourn.team_size})" class="btn-nexus mb-6">${t('create_team')}</button>
+                        <div class="flex items-center gap-2 mb-2 opacity-50"><div class="h-[1px] bg-white w-full"></div><span class="text-[9px] whitespace-nowrap">${t('or_join')}</span><div class="h-[1px] bg-white w-full"></div></div>
                         <div class="space-y-2">
-                            ${teamsListHTML || '<p class="text-center text-xs opacity-30">No open teams</p>'}
+                            ${teamsListHTML || `<p class="text-center text-xs opacity-30">${t('no_open_teams')}</p>`}
                         </div>
                     </div>
                 `;
@@ -517,7 +688,7 @@
 
         window.createTeam = async (tid, size) => {
             const name = document.getElementById('new-team-name').value;
-            if(!name) return alert("Enter name");
+            if(!name) return alert(t('enter_name'));
             const teamId = push(ref(db, `teams/${tid}`)).key;
             await set(ref(db, `teams/${tid}/${teamId}`), {
                 id: teamId,
@@ -532,7 +703,7 @@
             await set(ref(db, `teams/${tid}/${teamId}/requests/${user.id}`), {
                 id: user.id, name: user.first_name, wins: dbUser.self_wins, device: dbUser.device, avatar: dbUser.avatar
             });
-            alert("Request sent!");
+            alert(t('request_sent'));
         };
 
         window.acceptRequest = async (tid, teamId, reqId) => {
@@ -553,7 +724,7 @@
         };
 
         window.kickMember = async (tid, teamId, memberId) => {
-            if(!confirm("Kick user?")) return;
+            if(!confirm(t('kick_user'))) return;
             await remove(ref(db, `teams/${tid}/${teamId}/members/${memberId}`));
             await update(ref(db, `teams/${tid}/${teamId}`), { locked: false });
         };
@@ -565,7 +736,7 @@
             if (isOwner) {
                 const otherMembers = Object.keys(team.members).filter(id => id != user.id);
                 if (otherMembers.length === 0) {
-                    if(confirm("Delete team?")) await remove(teamRef);
+                    if(confirm(t('delete_team'))) await remove(teamRef);
                 } else {
                     showTransferModal(otherMembers, team.members, async (newOwnerId) => {
                          await update(ref(db, `teams/${tid}/${teamId}`), { owner_id: newOwnerId });
@@ -574,7 +745,7 @@
                     });
                 }
             } else {
-                if(confirm("Leave team?")) {
+                if(confirm(t('leave_team_confirm'))) {
                     await remove(ref(db, `teams/${tid}/${teamId}/members/${user.id}`));
                     await update(ref(db, `teams/${tid}/${teamId}`), { locked: false });
                 }
@@ -583,7 +754,7 @@
 
         function showTransferModal(ids, members, callback) {
             const modal = document.getElementById('modal-content');
-            let html = `<h3 class="font-bold mb-4 text-center">SELECT NEW OWNER</h3>`;
+            let html = `<h3 class="font-bold mb-4 text-center">${t('select_new_owner')}</h3>`;
             ids.forEach(id => {
                 const m = members[id];
                 html += `<button id="btn-${id}" class="w-full bg-white/10 p-3 rounded mb-2 flex items-center gap-2"><img src="${m.avatar}" class="w-6 h-6 rounded-full"> ${m.name}</button>`;
@@ -597,10 +768,10 @@
         window.openLootbox = async (type) => {
             if (type === 'daily') {
                 const now = Date.now();
-                if (now - (dbUser.last_daily || 0) < 86400000) return alert("Wait for cooldown");
+                if (now - (dbUser.last_daily || 0) < 86400000) return alert(t('wait_cooldown'));
                 await update(ref(db, `users/${user.id}`), { last_daily: now });
             } else if (type === 'premium') {
-                if ((dbUser.gems || 0) < 100) return alert("Not enough Gems");
+                if ((dbUser.gems || 0) < 100) return alert(t('not_enough_gems'));
                 await update(ref(db, `users/${user.id}`), { gems: (dbUser.gems || 0) - 100 });
             }
 
@@ -623,8 +794,8 @@
                 if (!newInv.includes(winTitle.id)) newInv.push(winTitle.id);
                 await update(ref(db, `users/${user.id}`), { inventory: newInv });
 
-                alert(`YOU GOT: ${winTitle.name} (${rarity.toUpperCase()})`);
-                if(btn) btn.innerHTML = "OPEN FREE";
+                alert(`${t('you_got')}: ${winTitle.name} (${rarity.toUpperCase()})`);
+                if(btn) btn.innerHTML = t('open_free');
                 checkDaily();
             }, 1000);
         };
@@ -658,7 +829,7 @@
                 titleEl.innerText = activeT.name;
                 titleEl.className = `text-[9px] px-1.5 py-0.5 rounded border uppercase font-bold rarity-${activeT.rarity}`;
             } else {
-                titleEl.innerText = "NO TITLE";
+                titleEl.innerText = t('no_title');
                 titleEl.className = "text-[9px] px-1.5 py-0.5 rounded border border-white/10 text-gray-400";
             }
 
@@ -678,20 +849,41 @@
 
         window.equipTitle = async (tid) => {
             await update(ref(db, `users/${user.id}`), { active_title: tid });
-            alert("Equipped!");
+            alert(t('equipped'));
         };
 
         window.toggleAdmin = () => document.getElementById('admin-curtain').classList.toggle('active');
+        
         window.createTournament = async () => {
             const format = document.getElementById('adm-format').value;
-            const prize = document.getElementById('adm-prize').value;
+            
+            // PRIZE LOGIC
+            const rbx = document.getElementById('adm-prize-rbx').value;
+            const gems = document.getElementById('adm-prize-gems').value;
+            
+            if(!format) return alert("Format required");
+            if(!rbx && !gems) return alert("Prize required");
+            
+            let prizeStr = "";
+            if(rbx) prizeStr += `${rbx} RBX`;
+            if(rbx && gems) prizeStr += " + ";
+            if(gems) prizeStr += `${gems} 💎`;
+
             const size = document.getElementById('adm-team-size').value;
-            if(!format) return;
+            
             const tid = push(ref(db, 'tournaments')).key;
-            await set(ref(db, `tournaments/${tid}`), { id: tid, format: format, prize: prize, team_size: parseInt(size), mode: parseInt(size), active: true });
-            alert("Created");
+            await set(ref(db, `tournaments/${tid}`), { 
+                id: tid, 
+                format: format, 
+                prize: prizeStr, // Use composed prize string
+                team_size: parseInt(size), 
+                mode: parseInt(size), 
+                active: true 
+            });
+            alert(t('created'));
             toggleAdmin();
         };
+
         window.giveGems = async () => {
             const uid = document.getElementById('adm-user-id').value;
             const amt = parseInt(document.getElementById('adm-amount').value);
@@ -700,8 +892,8 @@
             const snap = await get(uRef);
             if(snap.exists()) {
                 await update(uRef, { gems: (snap.val().gems || 0) + amt });
-                alert("Sent");
-            } else alert("User not found");
+                alert(t('sent'));
+            } else alert(t('user_not_found'));
         };
 
         window.toggleProfile = () => document.getElementById('bottom-profile').classList.toggle('minimized');
