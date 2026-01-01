@@ -542,4 +542,241 @@
                     
                     // Check Lock (Hardcoded check for 2x2 for demo, can use dynamic size)
                     // In real app, pass teamSize to this func
-                    if(Object.keys(team.members).length >= 2) team.locked = true;
+                    if(Object.keys(team.members).length >= 2) team.locked = true; 
+                }
+                return team;
+            });
+        };
+
+        window.declineRequest = async (tid, teamId, reqId) => {
+            await remove(ref(db, `teams/${tid}/${teamId}/requests/${reqId}`));
+        };
+
+        window.kickMember = async (tid, teamId, memberId) => {
+            if(!confirm("Kick user?")) return;
+            await remove(ref(db, `teams/${tid}/${teamId}/members/${memberId}`));
+            await update(ref(db, `teams/${tid}/${teamId}`), { locked: false });
+        };
+
+        window.leaveTeam = async (tid, teamId, isOwner) => {
+            const teamRef = ref(db, `teams/${tid}/${teamId}`);
+            const snap = await get(teamRef);
+            const team = snap.val();
+
+            if (isOwner) {
+                const otherMembers = Object.keys(team.members).filter(id => id != user.id);
+                if (otherMembers.length === 0) {
+                    if(confirm("Delete team?")) await remove(teamRef);
+                } else {
+                    // Show modal to pick new owner
+                    showTransferModal(otherMembers, team.members, async (newOwnerId) => {
+                         await update(ref(db, `teams/${tid}/${teamId}`), { owner_id: newOwnerId });
+                         await remove(ref(db, `teams/${tid}/${teamId}/members/${user.id}`));
+                         closeModal();
+                    });
+                }
+            } else {
+                if(confirm("Leave team?")) {
+                    await remove(ref(db, `teams/${tid}/${teamId}/members/${user.id}`));
+                    await update(ref(db, `teams/${tid}/${teamId}`), { locked: false });
+                }
+            }
+        };
+
+        function showTransferModal(ids, members, callback) {
+            const modal = document.getElementById('modal-content');
+            let html = `<h3 class="font-bold mb-4 text-center">SELECT NEW OWNER</h3>`;
+            ids.forEach(id => {
+                const m = members[id];
+                html += `<button id="btn-${id}" class="w-full bg-white/10 p-3 rounded mb-2 flex items-center gap-2"><img src="${m.avatar}" class="w-6 h-6 rounded-full"> ${m.name}</button>`;
+            });
+            modal.innerHTML = html;
+            
+            ids.forEach(id => {
+                document.getElementById(`btn-${id}`).onclick = () => callback(id);
+            });
+            
+            document.getElementById('modal-overlay').classList.remove('hidden');
+        }
+        window.closeModal = () => document.getElementById('modal-overlay').classList.add('hidden');
+
+
+        // --- SHOP & TITLES ---
+        
+        window.openLootbox = async (type) => {
+            // Validation
+            if (type === 'daily') {
+                const now = Date.now();
+                if (now - (dbUser.last_daily || 0) < 86400000) return alert("Wait for cooldown");
+                await update(ref(db, `users/${user.id}`), { last_daily: now });
+            } else if (type === 'premium') {
+                if ((dbUser.gems || 0) < 100) return alert("Not enough Gems");
+                await update(ref(db, `users/${user.id}`), { gems: (dbUser.gems || 0) - 100 });
+            }
+
+            // Animation
+            const btn = type === 'daily' ? document.getElementById('btn-daily') : null;
+            if(btn) btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+            // Logic (Weighted Random)
+            setTimeout(async () => {
+                const rand = Math.random() * 100;
+                let rarity = 'common';
+                if (rand > 99.9) rarity = 'secret';
+                else if (rand > 99) rarity = 'covert';
+                else if (rand > 95) rarity = 'ultra';
+                else if (rand > 80) rarity = 'rare';
+                else if (rand > 50) rarity = 'uncommon';
+
+                // Pick random title of that rarity
+                const pool = titlesMeta.filter(t => t.rarity === rarity);
+                const winTitle = pool[Math.floor(Math.random() * pool.length)];
+
+                // Save to DB
+                let newInv = dbUser.inventory || [];
+                if (!newInv.includes(winTitle.id)) newInv.push(winTitle.id);
+                await update(ref(db, `users/${user.id}`), { inventory: newInv });
+
+                // Alert (Simple for now, can be modal)
+                alert(`YOU GOT: ${winTitle.name} (${rarity.toUpperCase()})`);
+                if(btn) btn.innerHTML = "OPEN FREE";
+                checkDaily();
+            }, 1000);
+        };
+
+        function checkDaily() {
+            const now = Date.now();
+            const diff = now - (dbUser.last_daily || 0);
+            const timer = document.getElementById('daily-timer');
+            const btn = document.getElementById('btn-daily');
+            
+            if (diff < 86400000) {
+                btn.disabled = true;
+                btn.style.opacity = 0.5;
+                timer.classList.remove('hidden');
+            } else {
+                btn.disabled = false;
+                btn.style.opacity = 1;
+                timer.classList.add('hidden');
+            }
+        }
+
+        // --- PROFILE & UI ---
+        
+        function renderProfile() {
+            document.getElementById('prof-name').innerText = dbUser.username;
+            document.getElementById('prof-avatar').src = dbUser.avatar || "https://placehold.co/100";
+            document.getElementById('prof-wins').innerText = dbUser.self_wins;
+            document.getElementById('prof-gems').innerText = dbUser.gems || 0;
+            document.getElementById('prof-device-icon').innerHTML = `<i class="fas fa-${dbUser.device == 'pc' ? 'desktop' : 'mobile-alt'}"></i>`;
+            
+            const activeT = titlesMeta.find(t => t.id === dbUser.active_title);
+            const titleEl = document.getElementById('prof-title');
+            if (activeT) {
+                titleEl.innerText = activeT.name;
+                titleEl.className = `text-[9px] px-1.5 py-0.5 rounded border uppercase font-bold rarity-${activeT.rarity}`;
+            } else {
+                titleEl.innerText = "NO TITLE";
+                titleEl.className = "text-[9px] px-1.5 py-0.5 rounded border border-white/10 text-gray-400";
+            }
+
+            // Render Inventory Drawer List
+            const invList = document.getElementById('inventory-list');
+            invList.innerHTML = '';
+            (dbUser.inventory || []).forEach(tid => {
+                const meta = titlesMeta.find(t => t.id === tid);
+                if(meta) {
+                    invList.innerHTML += `
+                    <div onclick="equipTitle('${tid}')" class="bg-white/5 p-3 rounded mb-2 flex justify-between items-center border-l-2 rarity-${meta.rarity}">
+                        <span class="font-bold text-sm">${meta.name}</span>
+                        ${dbUser.active_title === tid ? '<i class="fas fa-check text-green-500"></i>' : ''}
+                    </div>`;
+                }
+            });
+        }
+
+        window.equipTitle = async (tid) => {
+            await update(ref(db, `users/${user.id}`), { active_title: tid });
+            alert("Equipped!");
+        };
+
+        // --- ADMIN FUNCTIONS ---
+        window.toggleAdmin = () => document.getElementById('admin-curtain').classList.toggle('active');
+        
+        window.createTournament = async () => {
+            const format = document.getElementById('adm-format').value;
+            const prize = document.getElementById('adm-prize').value;
+            const size = document.getElementById('adm-team-size').value;
+            if(!format) return;
+
+            const tid = push(ref(db, 'tournaments')).key;
+            await set(ref(db, `tournaments/${tid}`), {
+                id: tid,
+                format: format,
+                prize: prize,
+                team_size: parseInt(size),
+                mode: parseInt(size), // 1, 2, 4
+                active: true
+            });
+            alert("Tournament Created");
+            toggleAdmin();
+        };
+
+        window.giveGems = async () => {
+            const uid = document.getElementById('adm-user-id').value;
+            const amt = parseInt(document.getElementById('adm-amount').value);
+            if(!uid || !amt) return;
+            
+            const uRef = ref(db, `users/${uid}`);
+            const snap = await get(uRef);
+            if(snap.exists()) {
+                const cur = snap.val().gems || 0;
+                await update(uRef, { gems: cur + amt });
+                alert("Gems Sent");
+            } else {
+                alert("User not found");
+            }
+        };
+
+        // --- VISUALS ---
+        window.toggleProfile = () => document.getElementById('bottom-profile').classList.toggle('minimized');
+        window.openDrawer = (id) => document.getElementById(id).classList.add('active');
+        window.closeDrawer = (id) => document.getElementById(id).classList.remove('active');
+
+        // Snow
+        function initSnow() {
+            const canvas = document.getElementById('snow-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            const particles = [];
+            for(let i=0; i<50; i++) particles.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, r: Math.random()*2+1, d: Math.random()*1+0.5 });
+            
+            function draw() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+                ctx.beginPath();
+                for(let i=0; i<particles.length; i++) {
+                    const p = particles[i];
+                    ctx.moveTo(p.x, p.y);
+                    ctx.arc(p.x, p.y, p.r, 0, Math.PI*2, true);
+                }
+                ctx.fill();
+                update();
+            }
+            
+            function update() {
+                for(let i=0; i<particles.length; i++) {
+                    const p = particles[i];
+                    p.y += p.d;
+                    if(p.y > canvas.height) {
+                        particles[i] = { x: Math.random()*canvas.width, y: -10, r: p.r, d: p.d };
+                    }
+                }
+            }
+            setInterval(draw, 33);
+        }
+    </script>
+</body>
+</html>
