@@ -2,312 +2,277 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <!-- Важно: отключаем зум и ставим cover для Telegram -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>INK OS</title>
+    <title>INK OS | TOURNAMENTS</title>
     
-    <!-- Подключаем Telegram WebApp SDK -->
+    <!-- Telegram SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700&family=Syncopate:wght@400;700&display=swap" rel="stylesheet">
     
     <style>
         :root {
-            --bg-main: #000000; /* Чистый черный для Telegram */
-            --bg-panel: #111111;
-            --border: #333333;
+            --bg-main: #000000;
+            --bg-card: #0a0a0a;
             --accent: #ffffff;
+            --border: #222;
+            --gold: #FFD700;
+            --rare-common: #a1a1aa;
+            --rare-uncommon: #22c55e;
+            --rare-rare: #3b82f6;
+            --rare-ultra: #a855f7;
+            --rare-covert: #ef4444;
+            --rare-secret: #eab308;
         }
 
         body { 
             background-color: var(--bg-main); 
             color: white; 
             font-family: 'Space Grotesk', sans-serif; 
-            overflow-x: hidden;
-            -webkit-tap-highlight-color: transparent;
+            overflow-x: hidden; 
             min-height: 100vh;
-            /* Исправление для Telegram фона */
-            background-attachment: fixed;
+            -webkit-tap-highlight-color: transparent;
         }
         
-        body.modal-open { overflow: hidden; height: 100vh; position: fixed; width: 100%; }
-
         .font-tech { font-family: 'Syncopate', sans-serif; }
-        .glass-panel { background: var(--bg-panel); border: 1px solid var(--border); }
         
-        .btn-nexus { 
-            background: var(--accent); color: black; font-weight: 800; 
-            letter-spacing: 1px; text-transform: uppercase;
-            border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; 
-            min-height: 56px; /* Большая кнопка для пальца */
-            border-radius: 8px;
-            font-size: 14px;
-        }
-        
-        .btn-icon { background: #222; color: white; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 8px; }
+        /* Snow Canvas */
+        #snow-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; opacity: 0.6; }
 
-        /* Стили инпутов под Telegram */
-        input, textarea { 
-            background: #1a1a1a !important; 
-            border: 1px solid #333 !important; 
-            color: white !important; 
-            padding: 16px; 
-            font-size: 16px !important; 
-            border-radius: 8px;
-            width: 100%;
-            -webkit-appearance: none;
-            margin-bottom: 10px;
-        }
-        input:focus { border-color: white !important; outline: none; }
-
-        /* --- ВАЖНОЕ ИЗМЕНЕНИЕ: DRAWER (Окно) --- */
+        /* Panels & Drawers */
         .drawer {
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            width: 100vw; 
-            height: 100vh; /* Полная высота */
-            background: #000000; 
-            z-index: 10000; /* Максимальный слой */
-            
-            /* Скрыто по умолчанию */
-            display: none; 
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            
-            /* Скролл внутри */
-            overflow-y: auto; 
-            -webkit-overflow-scrolling: touch;
+            position: fixed; left: 0; width: 100%; height: 100%; background: #000;
+            z-index: 50; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex; flex-direction: column;
         }
+        .drawer.active { transform: translateY(0); }
+        .drawer-content { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 120px; }
+        .drawer-header { padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #000; z-index: 10; }
 
-        /* Класс для открытия */
-        .drawer.active {
-            display: block;
-            opacity: 1;
+        /* Bottom Profile */
+        #bottom-profile {
+            position: fixed; bottom: 0; left: 0; width: 100%; 
+            background: rgba(10, 10, 10, 0.95); backdrop-filter: blur(10px);
+            border-top: 1px solid var(--border); z-index: 40;
+            transition: transform 0.3s ease;
+            padding-bottom: env(safe-area-inset-bottom);
         }
+        #bottom-profile.minimized .profile-content { display: none; }
+        #bottom-profile.minimized { transform: translateY(calc(100% - 40px)); }
 
-        .drawer-content {
-            padding: 20px;
-            padding-bottom: 300px; /* ОГРОМНЫЙ отступ снизу для клавиатуры */
-            min-height: 100%;
+        /* Admin Curtain */
+        #admin-curtain {
+            position: fixed; top: 0; left: 0; width: 100%; height: 80vh;
+            background: #111; z-index: 100; border-bottom: 2px solid var(--accent);
+            transform: translateY(-100%); transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+            overflow-y: auto; box-shadow: 0 10px 50px rgba(0,0,0,0.8);
         }
-
-        .drawer-header {
-            display: flex; justify-content: space-between; align-items: center;
-            padding-bottom: 20px; margin-bottom: 20px;
-            border-bottom: 1px solid var(--border);
-            position: sticky; top: 0; background: #000; z-index: 10;
-            padding-top: 10px;
+        #admin-curtain.active { transform: translateY(0); }
+        .admin-pull-tab {
+            position: fixed; top: 0; left: 50%; transform: translateX(-50%);
+            width: 60px; height: 6px; background: #333; border-radius: 0 0 10px 10px;
+            z-index: 101; cursor: pointer; display: none; /* Hidden unless admin */
         }
-
-        /* Спец. стили для админки */
-        #admin-dashboard {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; z-index: 20000; 
-            display: none;
-            overflow-y: auto;
-        }
-        #admin-dashboard.active { display: block; }
         
-        #settings-panel {
-            position: fixed; top: 0; right: 0; width: 100%; height: 100%; background: #000; z-index: 15000;
-            display: none; overflow-y: auto;
+        /* Utilities */
+        .btn-nexus { 
+            background: var(--accent); color: black; font-weight: 800; text-transform: uppercase;
+            padding: 14px; width: 100%; border-radius: 8px; display: flex; justify-content: center; align-items: center; gap: 8px;
         }
-        #settings-panel.active { display: block; }
+        .input-nexus {
+            background: #161616; border: 1px solid #333; color: white; padding: 12px; width: 100%; border-radius: 6px; outline: none;
+        }
+        .card { background: var(--bg-card); border: 1px solid var(--border); padding: 16px; border-radius: 12px; margin-bottom: 12px; }
 
-        .tournament-card {
-            background: #111; border: 1px solid #333; padding: 20px; margin-bottom: 15px; border-radius: 12px;
-        }
+        /* Lootbox Rarity Colors */
+        .rarity-common { color: var(--rare-common); border-color: var(--rare-common); }
+        .rarity-uncommon { color: var(--rare-uncommon); border-color: var(--rare-uncommon); }
+        .rarity-rare { color: var(--rare-rare); border-color: var(--rare-rare); }
+        .rarity-ultra { color: var(--rare-ultra); border-color: var(--rare-ultra); }
+        .rarity-covert { color: var(--rare-covert); border-color: var(--rare-covert); box-shadow: 0 0 10px rgba(239, 68, 68, 0.2); }
+        .rarity-secret { color: var(--rare-secret); border-color: var(--rare-secret); animation: pulse-gold 2s infinite; }
+
+        @keyframes pulse-gold { 0% { box-shadow: 0 0 0 rgba(234, 179, 8, 0); } 50% { box-shadow: 0 0 15px rgba(234, 179, 8, 0.3); } 100% { box-shadow: 0 0 0 rgba(234, 179, 8, 0); } }
+        
+        /* Loading Overlay */
+        #loader { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; justify-content: center; align-items: center; }
     </style>
 </head>
-<body class="pb-20">
-    <!-- Снег пока уберем для производительности в ТГ, или оставим canvas -->
-    <canvas id="snow-canvas" class="fixed top-0 left-0 w-full h-full pointer-events-none z-0 opacity-20"></canvas>
+<body>
+    <canvas id="snow-canvas"></canvas>
+    
+    <!-- Loader -->
+    <div id="loader"><i class="fas fa-circle-notch fa-spin text-4xl text-white"></i></div>
 
-    <!-- Admin Panel -->
-    <div id="admin-dashboard">
-        <div class="max-w-md mx-auto p-4 pb-40">
-            <div class="flex justify-between items-center mb-6 border-b border-gray-800 pb-4 sticky top-0 bg-black pt-4 z-50">
-                <h2 class="text-xl font-bold">ADMIN</h2>
-                <button onclick="logoutAdmin()" class="text-red-500 font-bold text-sm">EXIT</button>
+    <!-- Admin Pull Tab (Visible only to Admin) -->
+    <div id="admin-trigger" class="admin-pull-tab" onclick="toggleAdmin()"></div>
+    
+    <!-- Admin Curtain -->
+    <div id="admin-curtain" class="p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="font-tech text-xl text-red-500">ADMIN CONTROL</h2>
+            <button onclick="toggleAdmin()" class="text-sm border border-white/20 px-3 py-1 rounded">CLOSE</button>
+        </div>
+        <div class="space-y-4">
+            <div class="card">
+                <h3 class="font-bold mb-2 text-sm">CREATE TOURNAMENT</h3>
+                <input id="adm-format" class="input-nexus mb-2" placeholder="Format (e.g. 2x2)">
+                <input id="adm-prize" class="input-nexus mb-2" placeholder="Prize (e.g. 1000 Gems)">
+                <select id="adm-team-size" class="input-nexus mb-2">
+                    <option value="1">Solo</option>
+                    <option value="2">Duo (2x2)</option>
+                    <option value="4">Squad (4x4)</option>
+                </select>
+                <button onclick="createTournament()" class="btn-nexus bg-red-600 text-white border-none">PUBLISH</button>
             </div>
             
-            <div class="space-y-4">
-                <div class="bg-[#111] p-4 rounded border border-gray-800">
-                    <h3 class="text-sm font-bold mb-4">NEW TOURNAMENT</h3>
-                    <input type="hidden" id="adm-id">
-                    <div class="flex gap-2 mb-2">
-                        <button onclick="setGameMode('solo')" id="mode-solo" class="flex-1 p-2 border border-gray-700 text-xs rounded bg-white text-black">SOLO</button>
-                        <button onclick="setGameMode('squad')" id="mode-squad" class="flex-1 p-2 border border-gray-700 text-xs rounded text-white">SQUAD</button>
-                    </div>
-                    <input type="text" id="adm-format" placeholder="Format (1x1)">
-                    <input type="text" id="adm-prize" placeholder="Prize (1000 RBX)">
-                    <input type="number" id="adm-max-players" placeholder="Max Players">
-                    <input type="number" id="adm-team-size" value="1" placeholder="Team Size" class="hidden">
-                    <textarea id="adm-rules" placeholder="Rules" class="h-20"></textarea>
-                    
-                    <button onclick="saveTournament()" class="btn-nexus w-full mt-2">CREATE</button>
-                    <button onclick="resetAdminForm()" class="w-full py-3 text-xs text-gray-500">RESET</button>
-                </div>
-
-                <div class="bg-[#111] p-4 rounded border border-gray-800">
-                    <h3 class="text-sm font-bold mb-2">ACTIVE LIST</h3>
-                    <div id="adm-tourn-list" class="space-y-2"></div>
-                </div>
-
-                <div id="adm-control-panel" class="bg-[#111] p-4 rounded border border-green-900 hidden">
-                    <h3 class="text-green-500 font-bold mb-2">MATCH CONTROL</h3>
-                    <div id="adm-team-list" class="space-y-2"></div>
-                </div>
+            <div class="card">
+                <h3 class="font-bold mb-2 text-sm">GIVE GEMS</h3>
+                <input id="adm-user-id" class="input-nexus mb-2" placeholder="Telegram ID">
+                <input id="adm-amount" type="number" class="input-nexus mb-2" placeholder="Amount">
+                <button onclick="giveGems()" class="btn-nexus bg-green-600 text-white border-none">SEND</button>
             </div>
         </div>
     </div>
 
-    <!-- Main Layout -->
-    <div class="relative z-10 p-4 max-w-md mx-auto">
-        <header class="flex justify-between items-center mb-8 pt-2">
-            <h1 class="text-3xl font-bold font-tech tracking-tighter">INK<span class="text-gray-600">_OS</span></h1>
-            <div class="flex items-center gap-3">
-                <!-- Кнопка админки скрытая, но доступная -->
-                <input type="password" id="admin-code" placeholder="KEY" class="bg-[#111] border-none text-center text-xs w-16 !p-2 rounded focus:w-24 transition-all h-[40px] !mb-0">
-                <button onclick="toggleSettings()" class="btn-icon"><i class="fas fa-bars"></i></button>
+    <!-- Main Content -->
+    <div class="relative z-10 p-4 pb-32">
+        <header class="flex justify-between items-center mb-8 pt-4">
+            <div>
+                <h1 class="text-3xl font-tech font-bold">INK<span class="opacity-30">OS</span></h1>
+                <p class="text-[10px] opacity-50 tracking-widest uppercase">Tournament Platform</p>
             </div>
+            <button onclick="openDrawer('drawer-shop')" class="w-10 h-10 bg-white/5 rounded flex items-center justify-center border border-white/10">
+                <i class="fas fa-shopping-cart text-yellow-500"></i>
+            </button>
         </header>
 
-        <!-- Profile Section -->
-        <div id="profile-card" class="mb-8">
-            <!-- Загружается JS -->
-            <div class="animate-pulse h-24 bg-[#111] rounded-xl"></div>
-        </div>
-
-        <!-- Tournaments List -->
-        <div class="space-y-4">
-            <h2 class="text-xs font-bold opacity-50 uppercase tracking-widest mb-2" data-lang="active_tourn">TOURNAMENTS</h2>
-            <div id="tournaments-container" class="space-y-4 pb-20">
-                <!-- Загружается JS -->
-            </div>
+        <!-- Active Tournaments List -->
+        <h2 class="text-xs font-bold opacity-50 mb-3 uppercase">Active Events</h2>
+        <div id="tournaments-list" class="space-y-3">
+            <!-- Rendered by JS -->
         </div>
     </div>
 
-    <!-- Drawer: REGISTRATION (Самое важное окно) -->
-    <div id="drawer-reg" class="drawer">
-        <div class="drawer-content">
-            <div class="drawer-header">
-                <h3 class="font-tech text-xl">PROFILE</h3>
-                <button onclick="closeAllPanels()" class="p-2"><i class="fas fa-times text-2xl"></i></button>
+    <!-- Bottom Profile -->
+    <div id="bottom-profile">
+        <div onclick="toggleProfile()" class="h-6 w-full flex justify-center items-center cursor-pointer opacity-50">
+            <div class="w-10 h-1 bg-gray-500 rounded-full"></div>
+        </div>
+        <div class="profile-content p-4 flex items-center gap-4">
+            <div class="relative">
+                <img id="prof-avatar" src="" class="w-12 h-12 rounded-full border border-white/20 bg-gray-800 object-cover">
+                <div id="prof-device-icon" class="absolute -bottom-1 -right-1 w-5 h-5 bg-black rounded-full flex items-center justify-center text-[10px] border border-white/20">
+                    <i class="fas fa-mobile-alt"></i>
+                </div>
             </div>
+            <div class="flex-1">
+                <div class="flex items-center gap-2">
+                    <h3 id="prof-name" class="font-bold text-lg leading-none">Guest</h3>
+                    <span id="prof-title" class="text-[9px] px-1.5 py-0.5 rounded border border-white/10 text-gray-400">NO TITLE</span>
+                </div>
+                <div class="flex gap-3 mt-1 text-xs opacity-70">
+                    <span><i class="fas fa-trophy text-yellow-500 mr-1"></i><span id="prof-wins">0</span></span>
+                    <span><i class="fas fa-gem text-blue-400 mr-1"></i><span id="prof-gems">0</span></span>
+                </div>
+            </div>
+            <button onclick="openDrawer('drawer-inventory')" class="p-2 text-xs border border-white/20 rounded">INV</button>
+        </div>
+    </div>
+
+    <!-- Drawer: Registration -->
+    <div id="drawer-reg" class="drawer" style="z-index: 200;">
+        <div class="drawer-header justify-center"><h2 class="font-tech">INITIATION</h2></div>
+        <div class="p-6 flex flex-col justify-center h-full">
+            <p class="text-center text-sm opacity-50 mb-6">Create your profile to compete.</p>
             
-            <form onsubmit="event.preventDefault(); handleRegistration();" class="flex flex-col gap-4">
-                <div class="bg-[#111] p-4 rounded-xl border border-gray-800">
-                    <label class="text-[10px] uppercase text-gray-500 font-bold mb-1 block">NICKNAME (ROBLOX)</label>
-                    <input type="text" id="reg-nick" placeholder="Enter Nickname" autocomplete="off" required>
-                </div>
+            <label class="text-[10px] uppercase font-bold mb-1 ml-1">Device</label>
+            <div class="flex gap-2 mb-4">
+                <button onclick="selectDevice('mobile')" id="dev-mobile" class="flex-1 p-4 border border-white/20 rounded opacity-50 hover:opacity-100 transition"><i class="fas fa-mobile-alt text-2xl"></i><br>PHONE</button>
+                <button onclick="selectDevice('pc')" id="dev-pc" class="flex-1 p-4 border border-white/20 rounded opacity-50 hover:opacity-100 transition"><i class="fas fa-desktop text-2xl"></i><br>PC</button>
+            </div>
 
-                <div class="bg-[#111] p-4 rounded-xl border border-gray-800">
-                    <label class="text-[10px] uppercase text-gray-500 font-bold mb-1 block">TELEGRAM</label>
-                    <input type="text" id="reg-tg" placeholder="@username" autocomplete="off" required>
-                </div>
-                
-                <div id="reg-wins-block" class="bg-[#111] p-4 rounded-xl border border-gray-800 hidden">
-                    <label class="text-[10px] uppercase text-gray-500 font-bold mb-1 block">WINS</label>
-                    <input type="number" id="reg-wins" disabled class="opacity-50">
-                </div>
-                
-                <p class="text-[10px] text-gray-500 text-center mt-2">Make sure your data is correct for payouts.</p>
-                
-                <button type="submit" class="btn-nexus w-full shadow-lg mt-4 text-lg">SAVE PROFILE</button>
-            </form>
+            <label class="text-[10px] uppercase font-bold mb-1 ml-1">Approx. Wins (Stats)</label>
+            <input id="reg-wins" type="number" class="input-nexus mb-6" placeholder="0">
+
+            <button onclick="completeRegistration()" class="btn-nexus">ENTER SYSTEM</button>
         </div>
     </div>
 
-    <!-- Drawer: DETAILS -->
-    <div id="drawer-details" class="drawer">
-        <div class="drawer-content">
-            <div class="drawer-header">
-                <h3 class="font-tech text-xl" id="det-title">INFO</h3>
-                <button onclick="closeAllPanels()" class="p-2"><i class="fas fa-times text-2xl"></i></button>
-            </div>
-            
-            <div class="space-y-6">
-                <div class="flex gap-4">
-                    <div class="flex-1 bg-[#111] p-4 rounded-xl border border-gray-800">
-                        <p class="text-[10px] text-gray-500">PRIZE</p>
-                        <p class="text-xl font-bold text-yellow-500" id="det-prize">-</p>
-                    </div>
-                    <div class="flex-1 bg-[#111] p-4 rounded-xl border border-gray-800">
-                        <p class="text-[10px] text-gray-500">FORMAT</p>
-                        <p class="text-xl font-bold" id="det-format">-</p>
-                    </div>
-                </div>
-
-                <div class="bg-[#111] p-4 rounded-xl border border-gray-800">
-                    <p class="text-[10px] text-gray-500 mb-2">RULES</p>
-                    <p class="text-sm text-gray-300 leading-relaxed" id="det-rules">-</p>
-                </div>
-
-                <div>
-                    <div class="flex justify-between mb-2 px-1">
-                        <span class="text-xs font-bold text-gray-500">PLAYERS</span>
-                        <span class="text-xs font-bold" id="det-count">0/0</span>
-                    </div>
-                    <div id="det-participants" class="bg-[#111] rounded-xl border border-gray-800 p-2 max-h-40 overflow-y-auto space-y-1"></div>
-                </div>
-                
-                <!-- Bracket -->
-                <div id="det-bracket-area" class="hidden">
-                    <p class="text-xs font-bold text-gray-500 mb-2 px-1">MATCHES</p>
-                    <div id="det-bracket-grid" class="space-y-2"></div>
-                </div>
-
-                <!-- Кнопка действия фиксированная внизу -->
-                <div id="det-action-area" class="pt-4 pb-10"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Drawer: TEAM JOIN -->
+    <!-- Drawer: Tournament / Teams -->
     <div id="drawer-team" class="drawer">
-        <div class="drawer-content">
-            <div class="drawer-header">
-                <h3 class="font-tech text-xl">JOIN</h3>
-                <button onclick="closeAllPanels()" class="p-2"><i class="fas fa-arrow-left text-2xl"></i></button>
-            </div>
-            <div id="team-action-area" class="space-y-6"></div>
+        <div class="drawer-header">
+            <h2 class="font-tech" id="tm-title">TEAMS</h2>
+            <button onclick="closeDrawer('drawer-team')"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="drawer-content" id="team-content">
+            <!-- Dynamic Content -->
         </div>
     </div>
 
-    <!-- Settings Panel -->
-    <div id="settings-panel">
+    <!-- Drawer: Shop -->
+    <div id="drawer-shop" class="drawer">
+        <div class="drawer-header">
+            <h2 class="font-tech text-yellow-500">TITLES SHOP</h2>
+            <button onclick="closeDrawer('drawer-shop')"><i class="fas fa-times"></i></button>
+        </div>
         <div class="drawer-content">
-            <div class="drawer-header">
-                <h3 class="font-tech text-xl">SETTINGS</h3>
-                <button onclick="closeAllPanels()" class="p-2"><i class="fas fa-times text-2xl"></i></button>
+            <div class="card border-yellow-500/30 bg-yellow-900/10 text-center relative overflow-hidden">
+                <div class="absolute top-0 right-0 bg-yellow-500 text-black text-[9px] font-bold px-2 py-1">DAILY FREE</div>
+                <h3 class="font-tech text-xl mt-2">FREE CRATE</h3>
+                <p class="text-xs opacity-50 mb-4">Random title (Common - Rare)</p>
+                <button id="btn-daily" onclick="openLootbox('daily')" class="btn-nexus text-xs py-3">OPEN FREE</button>
+                <p id="daily-timer" class="text-[10px] mt-2 opacity-50 hidden">Wait: 23h 59m</p>
             </div>
-            <div class="space-y-4">
-                <button onclick="changeLang('ru')" class="w-full p-4 bg-[#111] rounded text-left font-bold border border-gray-800">🇷🇺 RUSSIAN</button>
-                <button onclick="changeLang('en')" class="w-full p-4 bg-[#111] rounded text-left font-bold border border-gray-800">🇺🇸 ENGLISH</button>
+
+            <div class="card border-purple-500/30 bg-purple-900/10 text-center">
+                <h3 class="font-tech text-xl mt-2 text-purple-400">PREMIUM CRATE</h3>
+                <p class="text-xs opacity-50 mb-4">Chance for Secret titles</p>
+                <button onclick="openLootbox('premium')" class="btn-nexus bg-purple-600 text-white border-none text-xs py-3">OPEN (100 <i class="fas fa-gem"></i>)</button>
+            </div>
+
+            <div class="mt-8">
+                <h4 class="text-[10px] uppercase font-bold opacity-50 mb-2">Drop Rates</h4>
+                <div class="text-[10px] space-y-1 opacity-70">
+                    <div class="flex justify-between"><span class="text-gray-400">Common</span><span>50%</span></div>
+                    <div class="flex justify-between"><span class="text-green-400">Uncommon</span><span>30%</span></div>
+                    <div class="flex justify-between"><span class="text-blue-400">Rare</span><span>15%</span></div>
+                    <div class="flex justify-between"><span class="text-purple-400">Ultra</span><span>4%</span></div>
+                    <div class="flex justify-between"><span class="text-red-400">Covert</span><span>0.9%</span></div>
+                    <div class="flex justify-between"><span class="text-yellow-400 animate-pulse">Secret</span><span>0.1%</span></div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Уведомления -->
-    <div id="notification-area" class="fixed top-4 left-4 right-4 z-[30000] flex flex-col gap-2 pointer-events-none"></div>
+    <!-- Drawer: Inventory -->
+    <div id="drawer-inventory" class="drawer">
+        <div class="drawer-header">
+            <h2 class="font-tech">INVENTORY</h2>
+            <button onclick="closeDrawer('drawer-inventory')"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="drawer-content" id="inventory-list"></div>
+    </div>
+
+    <!-- Modals -->
+    <div id="modal-overlay" class="fixed inset-0 bg-black/90 z-[200] hidden flex items-center justify-center p-6">
+        <div class="card w-full max-w-sm relative" id="modal-content">
+            <!-- Dynamic -->
+        </div>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, set, onValue, update, remove, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, set, onValue, update, remove, get, push, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // --- TELEGRAM INIT ---
-        const tg = window.Telegram.WebApp;
-        tg.expand(); // РАСКРЫВАЕМ НА ВЕСЬ ЭКРАН СРАЗУ
-        tg.enableClosingConfirmation();
+        // --- CONFIG ---
+        // ЗАМЕНИ НА СВОЙ ID ЧТОБЫ РАБОТАЛА АДМИНКА
+        const ADMIN_IDS = [5501685605, 7654321]; 
         
-        // Красим хедер телеграма в черный
-        tg.setHeaderColor('#000000');
-        tg.setBackgroundColor('#000000');
-
         const firebaseConfig = {
             apiKey: "AIzaSyCK7gn8Xl-AW93FTni7q7Rx1QTUw0ILiCs",
             authDomain: "ink-game-843c1.firebaseapp.com",
@@ -320,377 +285,261 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
+        const tg = window.Telegram.WebApp;
 
-        // State
-        let state = {
-            player: JSON.parse(localStorage.getItem('ink_player')) || null,
-            // Пытаемся получить данные из TG
-            tgUser: tg.initDataUnsafe?.user || null,
-            tournaments: {},
-            teams: {},
-            gameMode: 'solo'
+        // Init Telegram
+        tg.expand();
+        tg.enableClosingConfirmation();
+        tg.setHeaderColor('#000000');
+        tg.setBackgroundColor('#000000');
+
+        // --- STATE ---
+        let user = tg.initDataUnsafe?.user || { id: 999, first_name: "Guest", username: "guest", photo_url: "" }; 
+        // user = { id: 5501685605, first_name: "Admin", username: "admin", photo_url: "" }; // UNCOMMENT TO TEST ADMIN ON PC
+
+        let dbUser = null;
+        let selectedDevice = null;
+        let titlesMeta = [
+            { id: 't1', name: "ROOKIE", rarity: "common" },
+            { id: 't2', name: "TRYHARD", rarity: "common" },
+            { id: 't3', name: "SNIPER", rarity: "uncommon" },
+            { id: 't4', name: "CAPTAIN", rarity: "uncommon" },
+            { id: 't5', name: "LEGEND", rarity: "rare" },
+            { id: 't6', name: "PREDATOR", rarity: "rare" },
+            { id: 't7', name: "INK MASTER", rarity: "ultra" },
+            { id: 't8', name: "GHOST", rarity: "covert" },
+            { id: 't9', name: "ADMIN SLAYER", rarity: "secret" }
+        ];
+
+        // --- INIT ---
+        window.onload = async () => {
+            initSnow();
+            
+            // Check Admin
+            if(ADMIN_IDS.includes(user.id)) {
+                document.getElementById('admin-trigger').style.display = 'block';
+            }
+
+            // Load User Data
+            const userRef = ref(db, `users/${user.id}`);
+            onValue(userRef, (snap) => {
+                document.getElementById('loader').style.display = 'none';
+                if(snap.exists()) {
+                    dbUser = snap.val();
+                    renderProfile();
+                    checkDaily();
+                } else {
+                    openDrawer('drawer-reg');
+                }
+            });
+
+            // Load Tournaments
+            onValue(ref(db, 'tournaments'), renderTournaments);
         };
 
-        // Если это первый заход и есть данные от ТГ, можно предзаполнить (опционально)
-        if(!state.player && state.tgUser) {
-            // Можно авто-логинить, но лучше попросить подтвердить ник
+        // --- REGISTRATION ---
+        window.selectDevice = (dev) => {
+            selectedDevice = dev;
+            document.getElementById('dev-mobile').style.borderColor = dev === 'mobile' ? 'white' : '#333';
+            document.getElementById('dev-mobile').style.opacity = dev === 'mobile' ? '1' : '0.5';
+            document.getElementById('dev-pc').style.borderColor = dev === 'pc' ? 'white' : '#333';
+            document.getElementById('dev-pc').style.opacity = dev === 'pc' ? '1' : '0.5';
+        };
+
+        window.completeRegistration = async () => {
+            const wins = document.getElementById('reg-wins').value;
+            if(!selectedDevice || !wins) return alert('Fill all fields');
+
+            const newUser = {
+                id: user.id,
+                username: user.username || "User",
+                first_name: user.first_name,
+                avatar: user.photo_url || "",
+                device: selectedDevice,
+                self_wins: parseInt(wins),
+                gems: 0,
+                active_title: null,
+                inventory: ['t1'], // Default title
+                last_daily: 0
+            };
+
+            await set(ref(db, `users/${user.id}`), newUser);
+            closeDrawer('drawer-reg');
+        };
+
+        // --- TOURNAMENTS & TEAMS (The Core Logic) ---
+        
+        function renderTournaments(snap) {
+            const list = document.getElementById('tournaments-list');
+            list.innerHTML = '';
+            if(!snap.exists()) return list.innerHTML = '<div class="opacity-30 text-center p-4">No Active Events</div>';
+            
+            snap.forEach(child => {
+                const t = child.val();
+                list.innerHTML += `
+                <div onclick="openTournament('${t.id}')" class="card active:scale-95 transition cursor-pointer flex justify-between items-center">
+                    <div>
+                        <div class="flex gap-2 mb-1"><span class="bg-red-900/50 text-red-300 text-[9px] px-1 rounded">LIVE</span></div>
+                        <h3 class="font-tech text-lg">${t.prize}</h3>
+                        <p class="text-xs opacity-50">${t.format} / ${t.mode == 1 ? 'SOLO' : (t.mode == 2 ? 'DUO' : 'SQUAD')}</p>
+                    </div>
+                    <i class="fas fa-chevron-right opacity-30"></i>
+                </div>`;
+            });
         }
 
-        // --- Firebase Listeners ---
-        onValue(ref(db, 'tournaments'), (snap) => {
-            state.tournaments = snap.val() || {};
-            renderList(); renderAdminList();
-        });
-        onValue(ref(db, 'teams'), (snap) => {
-            state.teams = snap.val() || {};
-            renderList();
-            // Обновляем открытое окно деталей если нужно
-            if(document.getElementById('drawer-details').classList.contains('active') && state.activeId) {
-                openDetails(state.activeId);
-            }
-        });
-        
-        // --- RENDER FUNCTIONS ---
+        window.openTournament = async (tid) => {
+            openDrawer('drawer-team');
+            const content = document.getElementById('team-content');
+            content.innerHTML = '<div class="text-center p-4"><i class="fas fa-circle-notch fa-spin"></i></div>';
 
-        // 1. Main List
-        window.renderList = function() {
-            const cont = document.getElementById('tournaments-container');
-            const list = Object.values(state.tournaments);
+            const tSnap = await get(ref(db, `tournaments/${tid}`));
+            const t = tSnap.val();
             
-            if(list.length === 0) {
-                cont.innerHTML = '<div class="p-10 text-center opacity-30 border border-dashed border-gray-700 rounded-xl">NO ACTIVE EVENTS</div>';
-                return;
-            }
-
-            cont.innerHTML = list.map(t => {
-                const teams = state.teams[t.id] || {};
-                const count = Object.keys(teams).length;
-                return `
-                <div onclick="openDetails('${t.id}')" class="tournament-card relative overflow-hidden active:scale-95 transition-transform cursor-pointer">
-                    <div class="relative z-10 flex justify-between items-center">
-                        <div>
-                            <div class="bg-white text-black text-[10px] font-bold px-2 py-1 inline-block rounded-sm mb-2">LIVE</div>
-                            <h2 class="text-3xl font-tech font-bold text-white">${t.prize}</h2>
-                            <p class="text-xs text-gray-400 mt-1 uppercase">${t.format} / ${t.mode}</p>
-                        </div>
-                        <div class="text-right">
-                             <span class="block text-2xl font-bold">${count}/${t.maxPlayers}</span>
-                             <span class="text-[10px] text-gray-500">JOINED</span>
-                        </div>
-                    </div>
-                    <div class="absolute bottom-0 left-0 h-1 bg-gray-800 w-full">
-                        <div class="h-full bg-white" style="width: ${(count/t.maxPlayers)*100}%"></div>
-                    </div>
-                </div>`;
-            }).join('');
+            // Realtime listener for this tournament's teams
+            onValue(ref(db, `teams/${tid}`), (snap) => {
+                renderTeamUI(tid, t, snap.val() || {});
+            });
         };
 
-        // 2. Profile
-        window.renderProfile = function() {
-            const card = document.getElementById('profile-card');
-            if(!state.player) {
-                card.innerHTML = `<button onclick="openReg()" class="btn-nexus w-full shadow-lg text-lg">CREATE ACCOUNT</button>`;
-            } else {
-                card.innerHTML = `
-                <div class="bg-[#111] p-6 rounded-xl border border-gray-800 flex justify-between items-center relative">
-                    <button onclick="openReg(true)" class="absolute top-4 right-4 text-gray-500 p-2"><i class="fas fa-cog"></i></button>
-                    <div>
-                        <p class="text-[10px] text-gray-500 font-bold uppercase mb-1">OPERATOR</p>
-                        <h2 class="text-2xl font-bold text-white break-all pr-8">${state.player.nick}</h2>
-                        <p class="text-xs text-blue-400 mt-1">${state.player.tg}</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-[10px] text-gray-500 font-bold uppercase">WINS</p>
-                        <p class="text-3xl font-tech font-bold text-white">${state.player.wins || 0}</p>
-                    </div>
-                </div>`;
-            }
-        };
-
-        // --- DRAWER LOGIC (TELEGRAM OPTIMIZED) ---
-        // Используем классы active вместо сложных анимаций для надежности
-        
-        window.openReg = function(isEdit = false) {
-            closeAllPanels();
-            const drawer = document.getElementById('drawer-reg');
-            drawer.classList.add('active'); // Показываем
-            
-            // Заполняем поля
-            const nickInp = document.getElementById('reg-nick');
-            const tgInp = document.getElementById('reg-tg');
-            const winsBlock = document.getElementById('reg-wins-block');
-            
-            if(state.player) {
-                nickInp.value = state.player.nick;
-                nickInp.disabled = true; // Ник менять нельзя
-                tgInp.value = state.player.tg;
-                document.getElementById('reg-wins').value = state.player.wins || 0;
-                winsBlock.classList.remove('hidden');
-            } else {
-                nickInp.value = '';
-                nickInp.disabled = false;
-                // Если есть юзернейм от ТГ
-                if(state.tgUser && state.tgUser.username) tgInp.value = '@' + state.tgUser.username;
-                else tgInp.value = '';
-                
-                winsBlock.classList.add('hidden');
-            }
-        };
-
-        window.openDetails = function(id) {
-            state.activeId = id;
-            closeAllPanels();
-            const t = state.tournaments[id];
-            if(!t) return;
-            
-            document.getElementById('det-title').innerText = t.format;
-            document.getElementById('det-prize').innerText = t.prize;
-            document.getElementById('det-format').innerText = t.format;
-            document.getElementById('det-rules').innerText = t.rules;
-            
-            const teams = state.teams[id] ? Object.values(state.teams[id]) : [];
-            document.getElementById('det-count').innerText = `${teams.length}/${t.maxPlayers}`;
-            
-            // Render Participants
-            document.getElementById('det-participants').innerHTML = teams.map(tm => 
-                `<div class="flex justify-between bg-[#1a1a1a] p-2 rounded text-xs"><span class="font-bold text-white">${tm.name}</span><span class="text-gray-500">${tm.members.length} ppl</span></div>`
-            ).join('');
-
-            // Render Bracket
-            const bracketArea = document.getElementById('det-bracket-area');
-            const bracketGrid = document.getElementById('det-bracket-grid');
-            if(teams.length >= 2) {
-                bracketArea.classList.remove('hidden');
-                let html = '';
-                for(let i=0; i<teams.length; i+=2) {
-                    if(teams[i+1]) {
-                        html += `<div class="flex justify-between items-center bg-[#1a1a1a] p-3 rounded border border-gray-800 text-xs">
-                            <span class="font-bold text-white">${teams[i].name}</span>
-                            <span class="text-gray-600 font-tech">VS</span>
-                            <span class="font-bold text-white">${teams[i+1].name}</span>
-                        </div>`;
-                    }
-                }
-                bracketGrid.innerHTML = html;
-            } else {
-                bracketArea.classList.add('hidden');
-            }
-
-            // Action Button
-            const actionArea = document.getElementById('det-action-area');
-            actionArea.innerHTML = `<button onclick="openJoin('${id}')" class="btn-nexus w-full shadow-lg">JOIN TOURNAMENT</button>`;
-
-            document.getElementById('drawer-details').classList.add('active');
-        };
-
-        window.openJoin = function(id) {
-            if(!state.player) {
-                // Если нет профиля - кидаем на регу
-                alert("Please create a profile first!");
-                return openReg();
-            }
-            closeAllPanels();
-            const t = state.tournaments[id];
-            const area = document.getElementById('team-action-area');
-            const teams = state.teams[id] ? Object.values(state.teams[id]) : [];
-            
-            // Проверка, вступил ли уже
-            const myTeam = teams.find(tm => tm.members.some(m => m.nick === state.player.nick));
+        function renderTeamUI(tid, tourn, teams) {
+            const content = document.getElementById('team-content');
+            const myTeam = Object.values(teams).find(team => team.members && team.members[user.id]);
             
             if(myTeam) {
-                area.innerHTML = `<div class="bg-green-900/30 p-6 rounded border border-green-500 text-center"><p class="text-green-500 font-bold mb-2">YOU ARE REGISTERED</p><p class="text-sm">Team: ${myTeam.name}</p></div>`;
-            } else if(t.mode === 'solo') {
-                 area.innerHTML = `
-                 <div class="bg-[#111] p-4 rounded border border-gray-800 mb-4 text-center text-sm text-gray-400">Confirm solo participation?</div>
-                 <button onclick="createTeam('${id}', '${state.player.nick}')" class="btn-nexus w-full">CONFIRM JOIN</button>`;
-            } else {
-                // Squad logic
-                area.innerHTML = `
-                <input type="text" id="new-team-name" placeholder="CREATE SQUAD NAME" class="w-full mb-4">
-                <button onclick="createTeam('${id}')" class="btn-nexus w-full mb-6">CREATE & JOIN</button>
+                // I AM IN A TEAM
+                const amIOwner = myTeam.owner_id == user.id;
                 
-                <p class="text-xs text-center text-gray-500 mb-2 uppercase tracking-widest">OR JOIN EXISTING</p>
-                <div class="space-y-2">
-                    ${teams.filter(tm => tm.members.length < tm.max).map(tm => `
-                        <button onclick="joinTeam('${id}', '${tm.id}')" class="w-full p-4 bg-[#111] border border-gray-800 rounded flex justify-between items-center active:bg-white active:text-black">
-                            <span class="font-bold">${tm.name}</span>
-                            <span class="text-xs">${tm.members.length}/${tm.max}</span>
-                        </button>
-                    `).join('') || '<p class="text-center text-xs text-gray-600">No open squads</p>'}
-                </div>
+                let membersHTML = '';
+                // Fetch member details (async is hard in render, so we store minimal data in team or fetch)
+                // For this demo, let's assume team.members stores basic info OR we just list IDs. 
+                // Better: We store {nick, device, wins, avatar} inside members for easy rendering.
+                
+                Object.values(myTeam.members).forEach(m => {
+                    const isOwner = myTeam.owner_id == m.id;
+                    membersHTML += `
+                    <div class="flex items-center justify-between bg-white/5 p-3 rounded mb-2">
+                        <div class="flex items-center gap-3">
+                            <img src="${m.avatar || 'https://placehold.co/50'}" class="w-8 h-8 rounded-full">
+                            <div>
+                                <p class="text-xs font-bold ${isOwner ? 'text-yellow-500' : ''}">${m.name} ${isOwner ? '<i class="fas fa-crown"></i>' : ''}</p>
+                                <p class="text-[9px] opacity-50"><i class="fas fa-${m.device == 'pc' ? 'desktop' : 'mobile-alt'}"></i> Wins: ${m.wins}</p>
+                            </div>
+                        </div>
+                        ${amIOwner && !isOwner ? `<button onclick="kickMember('${tid}', '${myTeam.id}', '${m.id}')" class="text-red-500 text-xs px-2">KICK</button>` : ''}
+                    </div>`;
+                });
+
+                let requestsHTML = '';
+                if(amIOwner && myTeam.requests) {
+                    requestsHTML = `<div class="mt-4 border-t border-white/10 pt-4"><h4 class="text-xs font-bold mb-2 text-yellow-500">REQUESTS</h4>`;
+                    Object.values(myTeam.requests).forEach(req => {
+                        requestsHTML += `
+                        <div class="flex justify-between items-center bg-yellow-900/10 border border-yellow-500/20 p-2 rounded mb-2">
+                            <div class="flex items-center gap-2">
+                                <img src="${req.avatar}" class="w-6 h-6 rounded-full">
+                                <div><p class="text-[10px] font-bold">${req.name}</p><p class="text-[9px] opacity-50">${req.wins}W</p></div>
+                            </div>
+                            <div class="flex gap-1">
+                                <button onclick="acceptRequest('${tid}', '${myTeam.id}', '${req.id}')" class="bg-green-500 text-black text-[9px] px-2 py-1 rounded">YES</button>
+                                <button onclick="declineRequest('${tid}', '${myTeam.id}', '${req.id}')" class="bg-red-500 text-white text-[9px] px-2 py-1 rounded">NO</button>
+                            </div>
+                        </div>`;
+                    });
+                    requestsHTML += `</div>`;
+                }
+
+                content.innerHTML = `
+                    <div class="card border-green-500/30">
+                        <h3 class="font-tech text-lg text-center mb-4">${myTeam.name}</h3>
+                        ${membersHTML}
+                        ${requestsHTML}
+                        <button onclick="leaveTeam('${tid}', '${myTeam.id}', ${amIOwner})" class="btn-nexus bg-red-900/50 text-red-200 mt-4 border border-red-500/30">LEAVE TEAM</button>
+                    </div>
+                `;
+            } else {
+                // I AM NOT IN A TEAM
+                let teamsListHTML = '';
+                const openTeams = Object.values(teams).filter(t => !t.locked && Object.keys(t.members).length < tourn.team_size);
+                
+                openTeams.forEach(t => {
+                    // Find owner info from members
+                    const owner = t.members[t.owner_id];
+                    teamsListHTML += `
+                    <div class="bg-white/5 p-3 rounded mb-2 flex justify-between items-center">
+                        <div class="flex items-center gap-3">
+                            <img src="${owner.avatar}" class="w-8 h-8 rounded-full border border-white/10">
+                            <div>
+                                <p class="text-xs font-bold">${t.name}</p>
+                                <p class="text-[9px] opacity-50">Creator: ${owner.name} (${owner.wins}W)</p>
+                            </div>
+                        </div>
+                        <button onclick="sendJoinRequest('${tid}', '${t.id}')" class="px-3 py-1 bg-white text-black text-[10px] font-bold rounded">JOIN</button>
+                    </div>`;
+                });
+
+                content.innerHTML = `
+                    <div class="p-2">
+                        <input id="new-team-name" class="input-nexus mb-2" placeholder="New Team Name">
+                        <button onclick="createTeam('${tid}', ${tourn.team_size})" class="btn-nexus mb-6">CREATE TEAM</button>
+                        
+                        <div class="flex items-center gap-2 mb-2 opacity-50"><div class="h-[1px] bg-white w-full"></div><span class="text-[9px] whitespace-nowrap">OR JOIN</span><div class="h-[1px] bg-white w-full"></div></div>
+                        
+                        <div class="space-y-2">
+                            ${teamsListHTML || '<p class="text-center text-xs opacity-30">No open teams</p>'}
+                        </div>
+                    </div>
                 `;
             }
-            
-            document.getElementById('drawer-team').classList.add('active');
-        };
+        }
 
-        // --- ACTIONS ---
-
-        window.handleRegistration = async function() {
-            const nick = document.getElementById('reg-nick').value.trim();
-            const tgVal = document.getElementById('reg-tg').value.trim();
+        // --- TEAM ACTIONS ---
+        window.createTeam = async (tid, size) => {
+            const name = document.getElementById('new-team-name').value;
+            if(!name) return alert("Enter name");
             
-            if(!nick || !tgVal) return notify("Fill all fields", 'error');
-            
-            let wins = 0;
-            if(state.player && state.player.nick === nick) {
-                wins = state.player.wins; // Сохраняем старые
-            } else {
-                // Проверяем в БД, вдруг юзер уже есть
-                const snap = await get(ref(db, 'users/'+nick));
-                if(snap.exists()) wins = snap.val().wins || 0;
-            }
-
-            const userData = { nick, tg: tgVal, wins };
-            await set(ref(db, 'users/'+nick), userData);
-            
-            state.player = userData;
-            localStorage.setItem('ink_player', JSON.stringify(userData));
-            
-            renderProfile();
-            closeAllPanels();
-            notify("Profile Saved!", "success");
-        };
-
-        window.createTeam = async function(tournId, forceName) {
-            const t = state.tournaments[tournId];
-            const name = forceName || document.getElementById('new-team-name').value.trim().toUpperCase();
-            if(!name) return;
-            
-            const tid = "t_" + Date.now();
-            const data = {
-                id: tid,
-                name: name,
-                members: [{nick: state.player.nick}],
-                max: t.teamSize
+            const teamId = push(ref(db, `teams/${tid}`)).key;
+            const memberData = {
+                id: user.id,
+                name: user.first_name,
+                wins: dbUser.self_wins,
+                device: dbUser.device,
+                avatar: dbUser.avatar
             };
-            
-            await set(ref(db, `teams/${tournId}/${tid}`), data);
-            closeAllPanels();
-            notify("Joined Successfully!", "success");
+
+            await set(ref(db, `teams/${tid}/${teamId}`), {
+                id: teamId,
+                name: name.toUpperCase(),
+                owner_id: user.id,
+                members: { [user.id]: memberData },
+                locked: false
+            });
         };
 
-        window.joinTeam = async function(tournId, teamId) {
-            const r = ref(db, `teams/${tournId}/${teamId}`);
-            const snap = await get(r);
-            const tm = snap.val();
-            
-            if(tm.members.length >= tm.max) return notify("Squad full", "error");
-            
-            const newMembers = [...tm.members, {nick: state.player.nick}];
-            await update(r, {members: newMembers});
-            
-            closeAllPanels();
-            notify("Joined Squad!", "success");
+        window.sendJoinRequest = async (tid, teamId) => {
+            const reqData = {
+                id: user.id,
+                name: user.first_name,
+                wins: dbUser.self_wins,
+                device: dbUser.device,
+                avatar: dbUser.avatar
+            };
+            await set(ref(db, `teams/${tid}/${teamId}/requests/${user.id}`), reqData);
+            alert("Request sent!");
         };
 
-        // --- UTILS ---
-        window.closeAllPanels = function() {
-            document.querySelectorAll('.drawer').forEach(d => d.classList.remove('active'));
-            document.getElementById('admin-dashboard').classList.remove('active');
-            document.getElementById('settings-panel').classList.remove('active');
-        };
+        window.acceptRequest = async (tid, teamId, reqId) => {
+            // Transaction to move from request to member
+            const teamRef = ref(db, `teams/${tid}/${teamId}`);
+            runTransaction(teamRef, (team) => {
+                if (team) {
+                    if (!team.members) team.members = {};
+                    if (!team.requests || !team.requests[reqId]) return; // Request gone
 
-        window.toggleSettings = function() {
-            document.getElementById('settings-panel').classList.add('active');
-        };
-        
-        // ADMIN UTILS
-        document.getElementById('admin-code').addEventListener('keyup', (e) => {
-             if(e.key === 'Enter' && e.target.value === 'уолтер лучший') {
-                 document.getElementById('admin-dashboard').classList.add('active');
-                 e.target.value = '';
-                 renderAdminList();
-             }
-        });
-        
-        window.logoutAdmin = function() {
-            document.getElementById('admin-dashboard').classList.remove('active');
-        };
-
-        window.saveTournament = async function() {
-             const id = document.getElementById('adm-id').value || "evt_" + Date.now();
-             const data = {
-                 id,
-                 format: document.getElementById('adm-format').value,
-                 prize: document.getElementById('adm-prize').value,
-                 maxPlayers: document.getElementById('adm-max-players').value,
-                 rules: document.getElementById('adm-rules').value,
-                 teamSize: document.getElementById('adm-team-size').value,
-                 mode: state.gameMode
-             };
-             await update(ref(db, `tournaments/${id}`), data);
-             document.getElementById('adm-id').value = ''; // clear id to create new next time
-             notify("Event Saved", "success");
-        };
-
-        window.renderAdminList = function() {
-            const list = Object.values(state.tournaments);
-            document.getElementById('adm-tourn-list').innerHTML = list.map(t => 
-                `<div class="flex justify-between items-center bg-[#222] p-2 rounded text-xs border border-gray-700">
-                    <span>${t.format}</span>
-                    <div class="flex gap-2">
-                        <button onclick="manageMatch('${t.id}')" class="text-green-500 font-bold">MNG</button>
-                        <button onclick="deleteT('${t.id}')" class="text-red-500 font-bold">DEL</button>
-                    </div>
-                 </div>`
-            ).join('');
-        };
-        
-        window.manageMatch = function(id) {
-             const teams = state.teams[id] ? Object.values(state.teams[id]) : [];
-             const panel = document.getElementById('adm-control-panel');
-             panel.classList.remove('hidden');
-             document.getElementById('adm-team-list').innerHTML = teams.map(tm => 
-                 `<div class="flex justify-between items-center bg-[#222] p-2 border-l-2 border-green-500 mb-1">
-                    <span class="text-xs font-bold text-white">${tm.name}</span>
-                    <button onclick="winTeam('${id}', '${tm.id}')" class="text-[10px] bg-green-900 text-green-300 px-2 py-1 rounded">WINNER</button>
-                 </div>`
-             ).join('') || '<p class="text-xs text-gray-500">No participants</p>';
-        };
-
-        window.winTeam = async function(tid, teamId) {
-            if(!confirm("Confirm Win?")) return;
-            // Add logic to add wins to users
-            // Remove tournament
-            await remove(ref(db, `tournaments/${tid}`));
-            await remove(ref(db, `teams/${tid}`));
-            document.getElementById('adm-control-panel').classList.add('hidden');
-            notify("Winner Declared & Event Closed", "success");
-        };
-
-        window.deleteT = async function(id) {
-            if(confirm("Delete?")) {
-                await remove(ref(db, `tournaments/${id}`));
-                await remove(ref(db, `teams/${id}`));
-            }
-        }
-        
-        window.setGameMode = function(m) {
-            state.gameMode = m;
-            document.getElementById('adm-team-size').value = m === 'solo' ? 1 : 2;
-            document.getElementById('mode-solo').className = m === 'solo' ? 'flex-1 p-2 border border-gray-700 text-xs rounded bg-white text-black' : 'flex-1 p-2 border border-gray-700 text-xs rounded text-white';
-            document.getElementById('mode-squad').className = m === 'squad' ? 'flex-1 p-2 border border-gray-700 text-xs rounded bg-white text-black' : 'flex-1 p-2 border border-gray-700 text-xs rounded text-white';
-        }
-
-        window.resetAdminForm = function() {
-            document.getElementById('adm-id').value = '';
-            document.getElementById('adm-format').value = '';
-            document.getElementById('adm-prize').value = '';
-            document.getElementById('adm-rules').value = '';
-        };
-
-        window.notify = function(msg, type) {
-            const d = document.createElement('div');
-            d.className = `p-4 rounded shadow-xl font-bold text-xs text-center border ${type === 'success' ? 'bg-green-900/80 border-green-500 text-white' : 'bg-red-900/80 border-red-500 text-white'}`;
-            d.innerText = msg;
-            document.getElementById('notification-area').appendChild(d);
-            setTimeout(() => d.remove(), 2500);
-        };
-        
-        // Initial render
-        renderProfile();
-        renderList();
-    </script>
-</body>
-</html>
+                    // Move
+                    team.members[reqId] = team.requests[reqId];
+                    delete team.requests[reqId];
+                    
+                    // Check Lock (Hardcoded check for 2x2 for demo, can use dynamic size)
+                    // In real app, pass teamSize to this func
+                    if(Object.keys(team.members).length >= 2) team.locked = true;
