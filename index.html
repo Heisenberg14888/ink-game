@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>INK OS | TOURNAMENTS</title>
+    <title>INK OS</title>
     
     <!-- Telegram SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -20,13 +20,6 @@
             --bg-card: #0a0a0a;
             --accent: #ffffff;
             --border: #222;
-            --gold: #FFD700;
-            --rare-common: #a1a1aa;
-            --rare-uncommon: #22c55e;
-            --rare-rare: #3b82f6;
-            --rare-ultra: #a855f7;
-            --rare-covert: #ef4444;
-            --rare-secret: #eab308;
         }
 
         body { 
@@ -40,18 +33,45 @@
         
         .font-tech { font-family: 'Syncopate', sans-serif; }
         
-        /* Snow Canvas */
         #snow-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; opacity: 0.6; }
 
-        /* Panels & Drawers */
+        /* General Drawer */
         .drawer {
-            position: fixed; left: 0; width: 100%; height: 100%; background: #000;
+            position: fixed; inset: 0; background: #000;
             z-index: 50; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex; flex-direction: column;
         }
         .drawer.active { transform: translateY(0); }
-        .drawer-content { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 120px; }
+        .drawer-content { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 150px; }
         .drawer-header { padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #000; z-index: 10; }
+
+        /* --- SPECIAL REGISTRATION DRAWER FIX --- */
+        #drawer-reg {
+            z-index: 9999 !important; /* Поверх всего */
+            background: #000;
+        }
+        #drawer-reg .drawer-content {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start; /* Прижимаем к верху */
+            padding-top: 40px; /* Отступ сверху */
+        }
+        
+        /* High Visibility Input */
+        .reg-input-fix {
+            background: #222 !important;
+            border: 2px solid #555 !important;
+            color: white !important;
+            font-size: 24px !important; /* Крупный текст */
+            padding: 20px !important;
+            border-radius: 12px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        .reg-input-fix:focus {
+            border-color: #fff !important;
+            background: #333 !important;
+        }
 
         /* Bottom Profile */
         #bottom-profile {
@@ -66,78 +86,77 @@
 
         /* Admin Curtain */
         #admin-curtain {
-            position: fixed; top: 0; left: 0; width: 100%; height: 80vh;
-            background: #111; z-index: 100; border-bottom: 2px solid var(--accent);
-            transform: translateY(-100%); transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
-            overflow-y: auto; box-shadow: 0 10px 50px rgba(0,0,0,0.8);
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #111; z-index: 100;
+            transform: translateY(-100%); transition: transform 0.3s ease;
+            overflow-y: auto; 
         }
         #admin-curtain.active { transform: translateY(0); }
         .admin-pull-tab {
             position: fixed; top: 0; left: 50%; transform: translateX(-50%);
-            width: 60px; height: 6px; background: #333; border-radius: 0 0 10px 10px;
-            z-index: 101; cursor: pointer; display: none; /* Hidden unless admin */
+            width: 80px; height: 30px; background: rgba(255,0,0,0.2); 
+            z-index: 101; cursor: pointer; display: none;
+            border-radius: 0 0 10px 10px;
         }
         
-        /* Utilities */
         .btn-nexus { 
             background: var(--accent); color: black; font-weight: 800; text-transform: uppercase;
-            padding: 14px; width: 100%; border-radius: 8px; display: flex; justify-content: center; align-items: center; gap: 8px;
+            padding: 16px; width: 100%; border-radius: 8px; display: flex; justify-content: center; align-items: center; gap: 8px;
         }
         .input-nexus {
             background: #161616; border: 1px solid #333; color: white; padding: 12px; width: 100%; border-radius: 6px; outline: none;
         }
         .card { background: var(--bg-card); border: 1px solid var(--border); padding: 16px; border-radius: 12px; margin-bottom: 12px; }
 
-        /* Lootbox Rarity Colors */
-        .rarity-common { color: var(--rare-common); border-color: var(--rare-common); }
-        .rarity-uncommon { color: var(--rare-uncommon); border-color: var(--rare-uncommon); }
-        .rarity-rare { color: var(--rare-rare); border-color: var(--rare-rare); }
-        .rarity-ultra { color: var(--rare-ultra); border-color: var(--rare-ultra); }
-        .rarity-covert { color: var(--rare-covert); border-color: var(--rare-covert); box-shadow: 0 0 10px rgba(239, 68, 68, 0.2); }
-        .rarity-secret { color: var(--rare-secret); border-color: var(--rare-secret); animation: pulse-gold 2s infinite; }
+        /* Rarities */
+        .rarity-common { color: #a1a1aa; border-color: #a1a1aa; }
+        .rarity-uncommon { color: #22c55e; border-color: #22c55e; }
+        .rarity-rare { color: #3b82f6; border-color: #3b82f6; }
+        .rarity-ultra { color: #a855f7; border-color: #a855f7; }
+        .rarity-covert { color: #ef4444; border-color: #ef4444; }
+        .rarity-secret { color: #eab308; border-color: #eab308; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
 
-        @keyframes pulse-gold { 0% { box-shadow: 0 0 0 rgba(234, 179, 8, 0); } 50% { box-shadow: 0 0 15px rgba(234, 179, 8, 0.3); } 100% { box-shadow: 0 0 0 rgba(234, 179, 8, 0); } }
-        
-        /* Loading Overlay */
         #loader { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px; }
     </style>
 </head>
 <body>
     <canvas id="snow-canvas"></canvas>
     
-    <!-- Loader -->
     <div id="loader">
         <i class="fas fa-circle-notch fa-spin text-4xl text-white"></i>
         <p class="text-xs text-gray-500 mt-2">Connecting...</p>
     </div>
 
-    <!-- Admin Pull Tab (Visible only to Admin) -->
-    <div id="admin-trigger" class="admin-pull-tab" onclick="toggleAdmin()"></div>
+    <!-- Admin Trigger -->
+    <div id="admin-trigger" class="admin-pull-tab flex justify-center items-center" onclick="toggleAdmin()">
+        <div class="w-10 h-1 bg-red-500 rounded"></div>
+    </div>
     
-    <!-- Admin Curtain -->
-    <div id="admin-curtain" class="p-6">
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="font-tech text-xl text-red-500">ADMIN CONTROL</h2>
-            <button onclick="toggleAdmin()" class="text-sm border border-white/20 px-3 py-1 rounded">CLOSE</button>
+    <!-- Admin Full Screen -->
+    <div id="admin-curtain" class="p-6 pb-40">
+        <div class="flex justify-between items-center mb-6 pt-4">
+            <h2 class="font-tech text-xl text-red-500">ADMIN PANEL</h2>
+            <button onclick="toggleAdmin()" class="text-sm border border-white/20 px-4 py-2 rounded bg-white/10">CLOSE</button>
         </div>
-        <div class="space-y-4">
+        <div class="space-y-6">
             <div class="card">
-                <h3 class="font-bold mb-2 text-sm">CREATE TOURNAMENT</h3>
-                <input id="adm-format" class="input-nexus mb-2" placeholder="Format (e.g. 2x2)">
-                <input id="adm-prize" class="input-nexus mb-2" placeholder="Prize (e.g. 1000 Gems)">
-                <select id="adm-team-size" class="input-nexus mb-2">
-                    <option value="1">Solo</option>
-                    <option value="2">Duo (2x2)</option>
-                    <option value="4">Squad (4x4)</option>
+                <h3 class="font-bold mb-4 text-sm text-center">CREATE TOURNAMENT</h3>
+                <input id="adm-format" class="input-nexus mb-3" placeholder="Format (e.g. 2x2)">
+                <input id="adm-prize" class="input-nexus mb-3" placeholder="Prize (e.g. 1000 Gems)">
+                <label class="text-[10px] uppercase opacity-50 block mb-1">Team Size</label>
+                <select id="adm-team-size" class="input-nexus mb-4">
+                    <option value="1">Solo (1)</option>
+                    <option value="2">Duo (2)</option>
+                    <option value="4">Squad (4)</option>
                 </select>
-                <button onclick="createTournament()" class="btn-nexus bg-red-600 text-white border-none">PUBLISH</button>
+                <button onclick="createTournament()" class="btn-nexus bg-red-600 text-white border-none py-4">PUBLISH EVENT</button>
             </div>
-            
             <div class="card">
-                <h3 class="font-bold mb-2 text-sm">GIVE GEMS</h3>
-                <input id="adm-user-id" class="input-nexus mb-2" placeholder="Telegram ID">
-                <input id="adm-amount" type="number" class="input-nexus mb-2" placeholder="Amount">
-                <button onclick="giveGems()" class="btn-nexus bg-green-600 text-white border-none">SEND</button>
+                <h3 class="font-bold mb-4 text-sm text-center">ADD GEMS</h3>
+                <input id="adm-user-id" class="input-nexus mb-3" type="number" placeholder="Telegram ID">
+                <input id="adm-amount" class="input-nexus mb-4" type="number" placeholder="Amount">
+                <button onclick="giveGems()" class="btn-nexus bg-green-600 text-white border-none py-4">SEND GEMS</button>
             </div>
         </div>
     </div>
@@ -149,60 +168,74 @@
                 <h1 class="text-3xl font-tech font-bold">INK<span class="opacity-30">OS</span></h1>
                 <p class="text-[10px] opacity-50 tracking-widest uppercase">Tournament Platform</p>
             </div>
-            <button onclick="openDrawer('drawer-shop')" class="w-10 h-10 bg-white/5 rounded flex items-center justify-center border border-white/10">
+            <button onclick="openDrawer('drawer-shop')" class="w-12 h-12 bg-white/5 rounded flex items-center justify-center border border-white/10 active:scale-95 transition">
                 <i class="fas fa-shopping-cart text-yellow-500"></i>
             </button>
         </header>
 
-        <!-- Active Tournaments List -->
         <h2 class="text-xs font-bold opacity-50 mb-3 uppercase">Active Events</h2>
-        <div id="tournaments-list" class="space-y-3">
-            <!-- Rendered by JS -->
-        </div>
+        <div id="tournaments-list" class="space-y-3"></div>
     </div>
 
     <!-- Bottom Profile -->
     <div id="bottom-profile">
-        <div onclick="toggleProfile()" class="h-6 w-full flex justify-center items-center cursor-pointer opacity-50">
-            <div class="w-10 h-1 bg-gray-500 rounded-full"></div>
+        <div onclick="toggleProfile()" class="h-8 w-full flex justify-center items-center cursor-pointer opacity-50">
+            <div class="w-12 h-1 bg-gray-500 rounded-full"></div>
         </div>
         <div class="profile-content p-4 flex items-center gap-4">
             <div class="relative">
-                <img id="prof-avatar" src="" class="w-12 h-12 rounded-full border border-white/20 bg-gray-800 object-cover">
-                <div id="prof-device-icon" class="absolute -bottom-1 -right-1 w-5 h-5 bg-black rounded-full flex items-center justify-center text-[10px] border border-white/20">
+                <img id="prof-avatar" src="" class="w-14 h-14 rounded-full border border-white/20 bg-gray-800 object-cover">
+                <div id="prof-device-icon" class="absolute -bottom-1 -right-1 w-6 h-6 bg-black rounded-full flex items-center justify-center text-xs border border-white/20">
                     <i class="fas fa-mobile-alt"></i>
                 </div>
             </div>
             <div class="flex-1">
                 <div class="flex items-center gap-2">
-                    <h3 id="prof-name" class="font-bold text-lg leading-none">Guest</h3>
+                    <h3 id="prof-name" class="font-bold text-lg leading-none truncate max-w-[150px]">Guest</h3>
                     <span id="prof-title" class="text-[9px] px-1.5 py-0.5 rounded border border-white/10 text-gray-400">NO TITLE</span>
                 </div>
-                <div class="flex gap-3 mt-1 text-xs opacity-70">
-                    <span><i class="fas fa-trophy text-yellow-500 mr-1"></i><span id="prof-wins">0</span></span>
-                    <span><i class="fas fa-gem text-blue-400 mr-1"></i><span id="prof-gems">0</span></span>
+                <div class="flex gap-4 mt-2 text-xs opacity-70">
+                    <span class="font-bold"><i class="fas fa-trophy text-yellow-500 mr-1"></i><span id="prof-wins">0</span></span>
+                    <span class="font-bold"><i class="fas fa-gem text-blue-400 mr-1"></i><span id="prof-gems">0</span></span>
                 </div>
             </div>
-            <button onclick="openDrawer('drawer-inventory')" class="p-2 text-xs border border-white/20 rounded">INV</button>
+            <button onclick="openDrawer('drawer-inventory')" class="p-3 text-xs border border-white/20 rounded font-bold active:bg-white active:text-black">INV</button>
         </div>
     </div>
 
-    <!-- Drawer: Registration -->
-    <div id="drawer-reg" class="drawer" style="z-index: 200;">
-        <div class="drawer-header justify-center"><h2 class="font-tech">INITIATION</h2></div>
-        <div class="p-6 flex flex-col justify-center h-full">
-            <p class="text-center text-sm opacity-50 mb-6">Create your profile to compete.</p>
+    <!-- REGISTRATION DRAWER (COMPLETELY REDESIGNED) -->
+    <div id="drawer-reg" class="drawer">
+        <!-- No header, just content starting from top -->
+        <div class="drawer-content">
+            <h2 class="font-tech text-3xl text-center mb-2 mt-4">WELCOME</h2>
+            <p class="text-center text-sm opacity-50 mb-8">Setup your profile to begin</p>
             
-            <label class="text-[10px] uppercase font-bold mb-1 ml-1">Device</label>
-            <div class="flex gap-2 mb-4">
-                <button onclick="selectDevice('mobile')" id="dev-mobile" class="flex-1 p-4 border border-white/20 rounded opacity-50 hover:opacity-100 transition"><i class="fas fa-mobile-alt text-2xl"></i><br>PHONE</button>
-                <button onclick="selectDevice('pc')" id="dev-pc" class="flex-1 p-4 border border-white/20 rounded opacity-50 hover:opacity-100 transition"><i class="fas fa-desktop text-2xl"></i><br>PC</button>
+            <!-- STEP 1 -->
+            <div class="mb-8">
+                <label class="text-xs font-bold uppercase mb-3 block text-gray-400 pl-1">1. Choose Platform</label>
+                <div class="flex gap-3">
+                    <button onclick="selectDevice('mobile')" id="dev-mobile" class="flex-1 p-6 border border-white/20 rounded-xl bg-[#111] opacity-50 transition active:scale-95">
+                        <i class="fas fa-mobile-alt text-3xl mb-2"></i><br><span class="font-bold">PHONE</span>
+                    </button>
+                    <button onclick="selectDevice('pc')" id="dev-pc" class="flex-1 p-6 border border-white/20 rounded-xl bg-[#111] opacity-50 transition active:scale-95">
+                        <i class="fas fa-desktop text-3xl mb-2"></i><br><span class="font-bold">PC</span>
+                    </button>
+                </div>
             </div>
 
-            <label class="text-[10px] uppercase font-bold mb-1 ml-1">Approx. Wins (Stats)</label>
-            <input id="reg-wins" type="number" class="input-nexus mb-6" placeholder="0">
+            <!-- STEP 2 -->
+            <div class="mb-8">
+                <label class="text-xs font-bold uppercase mb-3 block text-gray-400 pl-1">2. Total Wins</label>
+                <!-- BIG VISIBLE INPUT -->
+                <input id="reg-wins" type="tel" inputmode="numeric" class="reg-input-fix" placeholder="0" onfocus="scrollToInput(this)">
+            </div>
 
-            <button onclick="completeRegistration()" class="btn-nexus">ENTER SYSTEM</button>
+            <button onclick="completeRegistration()" class="btn-nexus py-5 text-lg shadow-lg shadow-white/10">
+                START OS <i class="fas fa-arrow-right ml-2"></i>
+            </button>
+            
+            <!-- Spacer for scroll -->
+            <div class="h-[300px]"></div>
         </div>
     </div>
 
@@ -210,44 +243,36 @@
     <div id="drawer-team" class="drawer">
         <div class="drawer-header">
             <h2 class="font-tech" id="tm-title">TEAMS</h2>
-            <button onclick="closeDrawer('drawer-team')"><i class="fas fa-times"></i></button>
+            <button onclick="closeDrawer('drawer-team')" class="p-2"><i class="fas fa-times text-xl"></i></button>
         </div>
-        <div class="drawer-content" id="team-content">
-            <!-- Dynamic Content -->
-        </div>
+        <div class="drawer-content" id="team-content"></div>
     </div>
 
     <!-- Drawer: Shop -->
     <div id="drawer-shop" class="drawer">
         <div class="drawer-header">
-            <h2 class="font-tech text-yellow-500">TITLES SHOP</h2>
-            <button onclick="closeDrawer('drawer-shop')"><i class="fas fa-times"></i></button>
+            <h2 class="font-tech text-yellow-500">SHOP</h2>
+            <button onclick="closeDrawer('drawer-shop')" class="p-2"><i class="fas fa-times text-xl"></i></button>
         </div>
         <div class="drawer-content">
             <div class="card border-yellow-500/30 bg-yellow-900/10 text-center relative overflow-hidden">
-                <div class="absolute top-0 right-0 bg-yellow-500 text-black text-[9px] font-bold px-2 py-1">DAILY FREE</div>
-                <h3 class="font-tech text-xl mt-2">FREE CRATE</h3>
-                <p class="text-xs opacity-50 mb-4">Random title (Common - Rare)</p>
+                <div class="absolute top-0 right-0 bg-yellow-500 text-black text-[9px] font-bold px-2 py-1">DAILY</div>
+                <h3 class="font-tech text-xl mt-2">FREE CASE</h3>
+                <p class="text-xs opacity-50 mb-4">Common - Rare Titles</p>
                 <button id="btn-daily" onclick="openLootbox('daily')" class="btn-nexus text-xs py-3">OPEN FREE</button>
-                <p id="daily-timer" class="text-[10px] mt-2 opacity-50 hidden">Wait: 23h 59m</p>
+                <p id="daily-timer" class="text-[10px] mt-2 opacity-50 hidden">Cooldown active</p>
             </div>
 
             <div class="card border-purple-500/30 bg-purple-900/10 text-center">
-                <h3 class="font-tech text-xl mt-2 text-purple-400">PREMIUM CRATE</h3>
-                <p class="text-xs opacity-50 mb-4">Chance for Secret titles</p>
-                <button onclick="openLootbox('premium')" class="btn-nexus bg-purple-600 text-white border-none text-xs py-3">OPEN (100 <i class="fas fa-gem"></i>)</button>
+                <h3 class="font-tech text-xl mt-2 text-purple-400">PREMIUM CASE</h3>
+                <p class="text-xs opacity-50 mb-4">Chance for Secret Titles</p>
+                <button onclick="openLootbox('premium')" class="btn-nexus bg-purple-600 text-white border-none text-xs py-3">OPEN (100 GEMS)</button>
             </div>
-
-            <div class="mt-8">
-                <h4 class="text-[10px] uppercase font-bold opacity-50 mb-2">Drop Rates</h4>
-                <div class="text-[10px] space-y-1 opacity-70">
-                    <div class="flex justify-between"><span class="text-gray-400">Common</span><span>50%</span></div>
-                    <div class="flex justify-between"><span class="text-green-400">Uncommon</span><span>30%</span></div>
-                    <div class="flex justify-between"><span class="text-blue-400">Rare</span><span>15%</span></div>
-                    <div class="flex justify-between"><span class="text-purple-400">Ultra</span><span>4%</span></div>
-                    <div class="flex justify-between"><span class="text-red-400">Covert</span><span>0.9%</span></div>
-                    <div class="flex justify-between"><span class="text-yellow-400 animate-pulse">Secret</span><span>0.1%</span></div>
-                </div>
+            
+            <div class="mt-8 text-[10px] opacity-50 text-center">
+                <p>Common: 50% | Uncommon: 30%</p>
+                <p>Rare: 15% | Ultra: 4% | Covert: 0.9%</p>
+                <p class="text-yellow-500">Secret: 0.1%</p>
             </div>
         </div>
     </div>
@@ -256,25 +281,20 @@
     <div id="drawer-inventory" class="drawer">
         <div class="drawer-header">
             <h2 class="font-tech">INVENTORY</h2>
-            <button onclick="closeDrawer('drawer-inventory')"><i class="fas fa-times"></i></button>
+            <button onclick="closeDrawer('drawer-inventory')" class="p-2"><i class="fas fa-times text-xl"></i></button>
         </div>
         <div class="drawer-content" id="inventory-list"></div>
     </div>
 
     <!-- Modals -->
-    <div id="modal-overlay" class="fixed inset-0 bg-black/90 z-[200] hidden flex items-center justify-center p-6">
-        <div class="card w-full max-w-sm relative" id="modal-content">
-            <!-- Dynamic -->
-        </div>
+    <div id="modal-overlay" class="fixed inset-0 bg-black/90 z-[400] hidden flex items-center justify-center p-6">
+        <div class="card w-full max-w-sm relative" id="modal-content"></div>
     </div>
 
     <script type="module">
-        // --- ВАЖНОЕ ИСПРАВЛЕНИЕ: ИСПОЛЬЗУЕМ CDN ИМПОРТЫ ДЛЯ БРАУЗЕРА ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, set, onValue, update, remove, get, push, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // --- ВАШ КОНФИГ ---
-        // Вставлен из вашего сообщения
         const firebaseConfig = {
             apiKey: "AIzaSyCK7gn8Xl-AW93FTni7q7Rx1QTUw0ILiCs",
             authDomain: "ink-game-843c1.firebaseapp.com",
@@ -286,28 +306,18 @@
             measurementId: "G-BPW1BM3H1N"
         };
 
-        const ADMIN_IDS = [5501685605]; // ЗАМЕНИТЕ НА СВОЙ ID, ЕСЛИ ОН ДРУГОЙ
+        const ADMIN_IDS = [5501685605];
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         const tg = window.Telegram.WebApp;
 
-        // Init Telegram
         tg.expand();
         tg.enableClosingConfirmation();
         tg.setHeaderColor('#000000');
         tg.setBackgroundColor('#000000');
 
-        // --- DEBUGGING ---
-        window.onerror = function(msg, url, line) {
-            // Раскомментируйте, если нужно видеть ошибки на телефоне
-            // alert("Err: " + msg);
-        };
-
-        // --- STATE ---
         let user = tg.initDataUnsafe?.user || { id: 999, first_name: "Guest", username: "guest", photo_url: "" }; 
-        
-        // Uncomment to test admin on PC if you are not in Telegram
         // user = { id: 5501685605, first_name: "Admin", username: "admin", photo_url: "" }; 
 
         let dbUser = null;
@@ -324,58 +334,59 @@
             { id: 't9', name: "ADMIN SLAYER", rarity: "secret" }
         ];
 
-        // --- INIT ---
         window.onload = async () => {
             initSnow();
             
-            // --- ЗАЩИТА ОТ БЕСКОНЕЧНОЙ ЗАГРУЗКИ ---
             setTimeout(() => {
                 const loader = document.getElementById('loader');
-                if(loader && loader.style.display !== 'none') {
-                    console.warn("Forcing loader hide (Timeout)");
-                    loader.style.display = 'none';
-                }
-            }, 4000); 
-            // -------------------------------------
+                if(loader && loader.style.display !== 'none') loader.style.display = 'none';
+            }, 5000);
 
-            // Check Admin
-            if(ADMIN_IDS.includes(user.id)) {
-                document.getElementById('admin-trigger').style.display = 'block';
-            }
+            if(ADMIN_IDS.includes(user.id)) document.getElementById('admin-trigger').style.display = 'flex';
 
-            // Load User Data
-            const userRef = ref(db, `users/${user.id}`);
-            onValue(userRef, (snap) => {
+            onValue(ref(db, `users/${user.id}`), (snap) => {
                 document.getElementById('loader').style.display = 'none';
                 if(snap.exists()) {
                     dbUser = snap.val();
                     renderProfile();
                     checkDaily();
+                    const regDrawer = document.getElementById('drawer-reg');
+                    if(regDrawer.classList.contains('active')) closeDrawer('drawer-reg');
                 } else {
-                    document.getElementById('loader').style.display = 'none';
                     openDrawer('drawer-reg');
                 }
-            }, (error) => {
-                console.error(error);
-                document.getElementById('loader').style.display = 'none';
+            }, (err) => {
+                 document.getElementById('loader').style.display = 'none';
+                 console.error(err);
             });
 
-            // Load Tournaments
             onValue(ref(db, 'tournaments'), renderTournaments);
         };
 
-        // --- REGISTRATION ---
+        // --- MOBILE INPUT SCROLL FIX ---
+        window.scrollToInput = (el) => {
+            setTimeout(() => {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 300);
+        };
+
         window.selectDevice = (dev) => {
             selectedDevice = dev;
-            document.getElementById('dev-mobile').style.borderColor = dev === 'mobile' ? 'white' : '#333';
             document.getElementById('dev-mobile').style.opacity = dev === 'mobile' ? '1' : '0.5';
-            document.getElementById('dev-pc').style.borderColor = dev === 'pc' ? 'white' : '#333';
+            document.getElementById('dev-mobile').style.borderColor = dev === 'mobile' ? '#fff' : '#333';
             document.getElementById('dev-pc').style.opacity = dev === 'pc' ? '1' : '0.5';
+            document.getElementById('dev-pc').style.borderColor = dev === 'pc' ? '#fff' : '#333';
         };
 
         window.completeRegistration = async () => {
-            const wins = document.getElementById('reg-wins').value;
-            if(!selectedDevice || !wins) return alert('Fill all fields');
+            const winsInp = document.getElementById('reg-wins');
+            const wins = winsInp.value;
+            
+            if(!selectedDevice) return alert('Select Device!');
+            if(!wins) {
+                winsInp.focus();
+                return alert('Enter Wins!');
+            }
 
             const newUser = {
                 id: user.id,
@@ -386,16 +397,13 @@
                 self_wins: parseInt(wins),
                 gems: 0,
                 active_title: null,
-                inventory: ['t1'], // Default title
+                inventory: ['t1'],
                 last_daily: 0
             };
 
             await set(ref(db, `users/${user.id}`), newUser);
-            closeDrawer('drawer-reg');
         };
 
-        // --- TOURNAMENTS & TEAMS (The Core Logic) ---
-        
         function renderTournaments(snap) {
             const list = document.getElementById('tournaments-list');
             list.innerHTML = '';
@@ -419,11 +427,8 @@
             openDrawer('drawer-team');
             const content = document.getElementById('team-content');
             content.innerHTML = '<div class="text-center p-4"><i class="fas fa-circle-notch fa-spin"></i></div>';
-
             const tSnap = await get(ref(db, `tournaments/${tid}`));
             const t = tSnap.val();
-            
-            // Realtime listener for this tournament's teams
             onValue(ref(db, `teams/${tid}`), (snap) => {
                 renderTeamUI(tid, t, snap.val() || {});
             });
@@ -434,11 +439,8 @@
             const myTeam = Object.values(teams).find(team => team.members && team.members[user.id]);
             
             if(myTeam) {
-                // I AM IN A TEAM
                 const amIOwner = myTeam.owner_id == user.id;
-                
                 let membersHTML = '';
-                
                 Object.values(myTeam.members).forEach(m => {
                     const isOwner = myTeam.owner_id == m.id;
                     membersHTML += `
@@ -482,7 +484,6 @@
                     </div>
                 `;
             } else {
-                // I AM NOT IN A TEAM
                 let teamsListHTML = '';
                 const openTeams = Object.values(teams).filter(t => !t.locked && Object.keys(t.members).length < tourn.team_size);
                 
@@ -505,9 +506,7 @@
                     <div class="p-2">
                         <input id="new-team-name" class="input-nexus mb-2" placeholder="New Team Name">
                         <button onclick="createTeam('${tid}', ${tourn.team_size})" class="btn-nexus mb-6">CREATE TEAM</button>
-                        
                         <div class="flex items-center gap-2 mb-2 opacity-50"><div class="h-[1px] bg-white w-full"></div><span class="text-[9px] whitespace-nowrap">OR JOIN</span><div class="h-[1px] bg-white w-full"></div></div>
-                        
                         <div class="space-y-2">
                             ${teamsListHTML || '<p class="text-center text-xs opacity-30">No open teams</p>'}
                         </div>
@@ -516,53 +515,33 @@
             }
         }
 
-        // --- TEAM ACTIONS ---
         window.createTeam = async (tid, size) => {
             const name = document.getElementById('new-team-name').value;
             if(!name) return alert("Enter name");
-            
             const teamId = push(ref(db, `teams/${tid}`)).key;
-            const memberData = {
-                id: user.id,
-                name: user.first_name,
-                wins: dbUser.self_wins,
-                device: dbUser.device,
-                avatar: dbUser.avatar
-            };
-
             await set(ref(db, `teams/${tid}/${teamId}`), {
                 id: teamId,
                 name: name.toUpperCase(),
                 owner_id: user.id,
-                members: { [user.id]: memberData },
+                members: { [user.id]: { id: user.id, name: user.first_name, wins: dbUser.self_wins, device: dbUser.device, avatar: dbUser.avatar } },
                 locked: false
             });
         };
 
         window.sendJoinRequest = async (tid, teamId) => {
-            const reqData = {
-                id: user.id,
-                name: user.first_name,
-                wins: dbUser.self_wins,
-                device: dbUser.device,
-                avatar: dbUser.avatar
-            };
-            await set(ref(db, `teams/${tid}/${teamId}/requests/${user.id}`), reqData);
+            await set(ref(db, `teams/${tid}/${teamId}/requests/${user.id}`), {
+                id: user.id, name: user.first_name, wins: dbUser.self_wins, device: dbUser.device, avatar: dbUser.avatar
+            });
             alert("Request sent!");
         };
 
         window.acceptRequest = async (tid, teamId, reqId) => {
-            // Transaction to move from request to member
             const teamRef = ref(db, `teams/${tid}/${teamId}`);
             runTransaction(teamRef, (team) => {
-                if (team) {
+                if (team && team.requests && team.requests[reqId]) {
                     if (!team.members) team.members = {};
-                    if (!team.requests || !team.requests[reqId]) return; // Request gone
-
-                    // Move
                     team.members[reqId] = team.requests[reqId];
                     delete team.requests[reqId];
-                    
                     if(Object.keys(team.members).length >= 2) team.locked = true; 
                 }
                 return team;
@@ -583,13 +562,11 @@
             const teamRef = ref(db, `teams/${tid}/${teamId}`);
             const snap = await get(teamRef);
             const team = snap.val();
-
             if (isOwner) {
                 const otherMembers = Object.keys(team.members).filter(id => id != user.id);
                 if (otherMembers.length === 0) {
                     if(confirm("Delete team?")) await remove(teamRef);
                 } else {
-                    // Show modal to pick new owner
                     showTransferModal(otherMembers, team.members, async (newOwnerId) => {
                          await update(ref(db, `teams/${tid}/${teamId}`), { owner_id: newOwnerId });
                          await remove(ref(db, `teams/${tid}/${teamId}/members/${user.id}`));
@@ -612,20 +589,12 @@
                 html += `<button id="btn-${id}" class="w-full bg-white/10 p-3 rounded mb-2 flex items-center gap-2"><img src="${m.avatar}" class="w-6 h-6 rounded-full"> ${m.name}</button>`;
             });
             modal.innerHTML = html;
-            
-            ids.forEach(id => {
-                document.getElementById(`btn-${id}`).onclick = () => callback(id);
-            });
-            
+            ids.forEach(id => document.getElementById(`btn-${id}`).onclick = () => callback(id));
             document.getElementById('modal-overlay').classList.remove('hidden');
         }
         window.closeModal = () => document.getElementById('modal-overlay').classList.add('hidden');
 
-
-        // --- SHOP & TITLES ---
-        
         window.openLootbox = async (type) => {
-            // Validation
             if (type === 'daily') {
                 const now = Date.now();
                 if (now - (dbUser.last_daily || 0) < 86400000) return alert("Wait for cooldown");
@@ -635,11 +604,9 @@
                 await update(ref(db, `users/${user.id}`), { gems: (dbUser.gems || 0) - 100 });
             }
 
-            // Animation
             const btn = type === 'daily' ? document.getElementById('btn-daily') : null;
             if(btn) btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
-            // Logic (Weighted Random)
             setTimeout(async () => {
                 const rand = Math.random() * 100;
                 let rarity = 'common';
@@ -649,16 +616,13 @@
                 else if (rand > 80) rarity = 'rare';
                 else if (rand > 50) rarity = 'uncommon';
 
-                // Pick random title of that rarity
                 const pool = titlesMeta.filter(t => t.rarity === rarity);
                 const winTitle = pool[Math.floor(Math.random() * pool.length)];
 
-                // Save to DB
                 let newInv = dbUser.inventory || [];
                 if (!newInv.includes(winTitle.id)) newInv.push(winTitle.id);
                 await update(ref(db, `users/${user.id}`), { inventory: newInv });
 
-                // Alert (Simple for now, can be modal)
                 alert(`YOU GOT: ${winTitle.name} (${rarity.toUpperCase()})`);
                 if(btn) btn.innerHTML = "OPEN FREE";
                 checkDaily();
@@ -670,7 +634,6 @@
             const diff = now - (dbUser.last_daily || 0);
             const timer = document.getElementById('daily-timer');
             const btn = document.getElementById('btn-daily');
-            
             if (diff < 86400000) {
                 btn.disabled = true;
                 btn.style.opacity = 0.5;
@@ -682,8 +645,6 @@
             }
         }
 
-        // --- PROFILE & UI ---
-        
         function renderProfile() {
             document.getElementById('prof-name').innerText = dbUser.username;
             document.getElementById('prof-avatar').src = dbUser.avatar || "https://placehold.co/100";
@@ -701,7 +662,6 @@
                 titleEl.className = "text-[9px] px-1.5 py-0.5 rounded border border-white/10 text-gray-400";
             }
 
-            // Render Inventory Drawer List
             const invList = document.getElementById('inventory-list');
             invList.innerHTML = '';
             (dbUser.inventory || []).forEach(tid => {
@@ -721,59 +681,40 @@
             alert("Equipped!");
         };
 
-        // --- ADMIN FUNCTIONS ---
         window.toggleAdmin = () => document.getElementById('admin-curtain').classList.toggle('active');
-        
         window.createTournament = async () => {
             const format = document.getElementById('adm-format').value;
             const prize = document.getElementById('adm-prize').value;
             const size = document.getElementById('adm-team-size').value;
             if(!format) return;
-
             const tid = push(ref(db, 'tournaments')).key;
-            await set(ref(db, `tournaments/${tid}`), {
-                id: tid,
-                format: format,
-                prize: prize,
-                team_size: parseInt(size),
-                mode: parseInt(size), // 1, 2, 4
-                active: true
-            });
-            alert("Tournament Created");
+            await set(ref(db, `tournaments/${tid}`), { id: tid, format: format, prize: prize, team_size: parseInt(size), mode: parseInt(size), active: true });
+            alert("Created");
             toggleAdmin();
         };
-
         window.giveGems = async () => {
             const uid = document.getElementById('adm-user-id').value;
             const amt = parseInt(document.getElementById('adm-amount').value);
             if(!uid || !amt) return;
-            
             const uRef = ref(db, `users/${uid}`);
             const snap = await get(uRef);
             if(snap.exists()) {
-                const cur = snap.val().gems || 0;
-                await update(uRef, { gems: cur + amt });
-                alert("Gems Sent");
-            } else {
-                alert("User not found");
-            }
+                await update(uRef, { gems: (snap.val().gems || 0) + amt });
+                alert("Sent");
+            } else alert("User not found");
         };
 
-        // --- VISUALS ---
         window.toggleProfile = () => document.getElementById('bottom-profile').classList.toggle('minimized');
         window.openDrawer = (id) => document.getElementById(id).classList.add('active');
         window.closeDrawer = (id) => document.getElementById(id).classList.remove('active');
 
-        // Snow
         function initSnow() {
             const canvas = document.getElementById('snow-canvas');
             const ctx = canvas.getContext('2d');
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
-            
             const particles = [];
             for(let i=0; i<50; i++) particles.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, r: Math.random()*2+1, d: Math.random()*1+0.5 });
-            
             function draw() {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
@@ -786,14 +727,11 @@
                 ctx.fill();
                 update();
             }
-            
             function update() {
                 for(let i=0; i<particles.length; i++) {
                     const p = particles[i];
                     p.y += p.d;
-                    if(p.y > canvas.height) {
-                        particles[i] = { x: Math.random()*canvas.width, y: -10, r: p.r, d: p.d };
-                    }
+                    if(p.y > canvas.height) particles[i] = { x: Math.random()*canvas.width, y: -10, r: p.r, d: p.d };
                 }
             }
             setInterval(draw, 33);
