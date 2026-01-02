@@ -122,37 +122,41 @@
             <button onclick="toggleAdmin()" class="text-sm border border-white/20 px-4 py-2 rounded bg-white/10" data-lang="close">CLOSE</button>
         </div>
         <div class="space-y-6">
-            <!-- NEW: User Count Card -->
+            <!-- Stats -->
             <div class="card border-blue-500/30 bg-blue-900/10">
                 <h3 class="font-bold text-xs text-blue-400 mb-1" data-lang="total_users_title">TOTAL USERS</h3>
                 <p class="font-tech text-3xl" id="adm-total-users">0</p>
             </div>
 
+            <!-- Users List -->
+            <div class="card border-white/10">
+                <h3 class="font-bold text-sm mb-3">ALL USERS (CLICK TO VIEW)</h3>
+                <div id="adm-users-list" class="max-h-[200px] overflow-y-auto space-y-2 pr-1">
+                    <!-- JS Populated -->
+                </div>
+            </div>
+
+            <!-- Actions -->
             <div class="card">
                 <h3 class="font-bold mb-4 text-sm text-center">CREATE TOURNAMENT</h3>
-                
-                <label class="text-[10px] uppercase opacity-50 block mb-1">Format</label>
-                <input id="adm-format" class="input-nexus mb-3" placeholder="e.g. 2x2">
-                
-                <label class="text-[10px] uppercase opacity-50 block mb-1">Prize</label>
+                <input id="adm-format" class="input-nexus mb-3" placeholder="Format (2x2)">
                 <div class="flex gap-2 mb-3">
                     <input id="adm-prize-rbx" type="number" class="input-nexus" placeholder="Robux">
                     <input id="adm-prize-gems" type="number" class="input-nexus" placeholder="Gems">
                 </div>
-
-                <label class="text-[10px] uppercase opacity-50 block mb-1">Team Size</label>
                 <select id="adm-team-size" class="input-nexus mb-4">
-                    <option value="1">Solo (1)</option>
-                    <option value="2">Duo (2)</option>
-                    <option value="4">Squad (4)</option>
+                    <option value="1">Solo</option>
+                    <option value="2">Duo</option>
+                    <option value="4">Squad</option>
                 </select>
-                <button onclick="createTournament()" class="btn-nexus bg-red-600 text-white border-none py-4">PUBLISH EVENT</button>
+                <button onclick="createTournament()" class="btn-nexus bg-red-600 text-white border-none py-4">PUBLISH</button>
             </div>
+            
             <div class="card">
                 <h3 class="font-bold mb-4 text-sm text-center">ADD GEMS</h3>
                 <input id="adm-user-id" class="input-nexus mb-3" type="number" placeholder="Telegram ID">
                 <input id="adm-amount" class="input-nexus mb-4" type="number" placeholder="Amount">
-                <button onclick="giveGems()" class="btn-nexus bg-green-600 text-white border-none py-4">SEND GEMS</button>
+                <button onclick="giveGems()" class="btn-nexus bg-green-600 text-white border-none py-4">SEND</button>
             </div>
         </div>
     </div>
@@ -183,7 +187,6 @@
         </div>
         <div class="profile-content p-4 flex items-center gap-4">
             <div class="relative">
-                <!-- FIX: Added flex-shrink-0 to prevent oval shape -->
                 <img id="prof-avatar" src="" class="w-14 h-14 rounded-full border border-white/20 bg-gray-800 object-cover flex-shrink-0">
                 <div id="prof-device-icon" class="absolute -bottom-1 -right-1 w-6 h-6 bg-black rounded-full flex items-center justify-center text-xs border border-white/20">
                     <i class="fas fa-mobile-alt"></i>
@@ -208,7 +211,6 @@
         <div class="drawer-content">
             <h2 class="font-tech text-3xl text-center mb-2 mt-4" data-lang="welcome">WELCOME</h2>
             <p class="text-center text-sm opacity-50 mb-8" data-lang="setup_profile">Setup your profile to begin</p>
-            
             <div class="mb-8">
                 <label class="text-xs font-bold uppercase mb-3 block text-gray-400 pl-1" data-lang="choose_platform">1. Choose Platform</label>
                 <div class="flex gap-3">
@@ -220,12 +222,10 @@
                     </button>
                 </div>
             </div>
-
             <div class="mb-8">
                 <label class="text-xs font-bold uppercase mb-3 block text-gray-400 pl-1" data-lang="total_wins">2. Total Wins</label>
                 <input id="reg-wins" type="tel" inputmode="numeric" class="reg-input-fix" placeholder="0" onfocus="scrollToInput(this)">
             </div>
-
             <button onclick="completeRegistration()" class="btn-nexus py-5 text-lg shadow-lg shadow-white/10">
                 <span data-lang="start_os">START OS</span> <i class="fas fa-arrow-right ml-2"></i>
             </button>
@@ -256,13 +256,11 @@
                 <button id="btn-daily" onclick="openLootbox('daily')" class="btn-nexus text-xs py-3" data-lang="open_free">OPEN FREE</button>
                 <p id="daily-timer" class="text-[10px] mt-2 opacity-50 hidden" data-lang="cooldown">Cooldown active</p>
             </div>
-
             <div class="card border-purple-500/30 bg-purple-900/10 text-center">
                 <h3 class="font-tech text-xl mt-2 text-purple-400" data-lang="premium_case">PREMIUM CASE</h3>
                 <p class="text-xs opacity-50 mb-4" data-lang="chance_secret">Chance for Secret Titles</p>
                 <button onclick="openLootbox('premium')" class="btn-nexus bg-purple-600 text-white border-none text-xs py-3" id="btn-premium">OPEN (100 GEMS)</button>
             </div>
-            
             <div class="mt-8 text-[10px] opacity-50 text-center" id="drop-rates"></div>
         </div>
     </div>
@@ -274,6 +272,29 @@
             <button onclick="closeDrawer('drawer-inventory')" class="p-2"><i class="fas fa-times text-xl"></i></button>
         </div>
         <div class="drawer-content" id="inventory-list"></div>
+    </div>
+
+    <!-- Drawer: VIEW OTHER PROFILE -->
+    <div id="drawer-user-view" class="drawer">
+        <div class="drawer-header">
+            <h2 class="font-tech">PROFILE</h2>
+            <button onclick="closeDrawer('drawer-user-view')" class="p-2"><i class="fas fa-times text-xl"></i></button>
+        </div>
+        <div class="drawer-content">
+            <div class="flex flex-col items-center mb-8">
+                <img id="view-avatar" src="" class="w-24 h-24 rounded-full border-2 border-white/20 mb-4 bg-gray-800 object-cover">
+                <h2 id="view-name" class="font-tech text-2xl mb-1">...</h2>
+                <div id="view-title-badge"></div>
+                <div class="flex gap-4 mt-4 text-sm bg-white/5 p-4 rounded-xl w-full justify-around">
+                    <div class="text-center"><p class="text-[10px] opacity-50">WINS</p><p class="font-bold text-yellow-500" id="view-wins">0</p></div>
+                    <div class="text-center"><p class="text-[10px] opacity-50">GEMS</p><p class="font-bold text-blue-400" id="view-gems">0</p></div>
+                    <div class="text-center"><p class="text-[10px] opacity-50">DEVICE</p><p class="font-bold" id="view-device">-</p></div>
+                </div>
+            </div>
+            
+            <h3 class="text-xs font-bold opacity-50 mb-4 px-1">INVENTORY</h3>
+            <div id="view-inventory-list" class="space-y-2"></div>
+        </div>
     </div>
 
     <!-- Modals -->
@@ -412,20 +433,30 @@
 
             if(ADMIN_IDS.includes(user.id)) document.getElementById('admin-trigger').style.display = 'flex';
 
-            // STATS CALCULATION
+            // STATS & ADMIN LIST
             const allUsersSnap = await get(ref(db, 'users'));
             if(allUsersSnap.exists()) {
                 totalUsersCount = allUsersSnap.size;
-                document.getElementById('adm-total-users').innerText = totalUsersCount; // ADMIN STATS
+                document.getElementById('adm-total-users').innerText = totalUsersCount;
                 
+                let adminListHTML = '';
                 allUsersSnap.forEach(uSnap => {
                     const u = uSnap.val();
-                    if(u.inventory) {
-                        u.inventory.forEach(tid => {
-                            titleCounts[tid] = (titleCounts[tid] || 0) + 1;
-                        });
-                    }
+                    // Calc title stats
+                    if(u.inventory) u.inventory.forEach(tid => titleCounts[tid] = (titleCounts[tid] || 0) + 1);
+                    
+                    // Render Admin List Item
+                    adminListHTML += `
+                        <div onclick="openUserProfile('${u.id}')" class="flex justify-between items-center bg-white/5 p-2 rounded cursor-pointer hover:bg-white/10">
+                            <div class="flex items-center gap-2">
+                                <img src="${u.avatar || 'https://placehold.co/50'}" class="w-6 h-6 rounded-full">
+                                <span class="text-xs font-bold truncate w-24">${u.username}</span>
+                            </div>
+                            <span class="text-[10px] opacity-50">${u.id}</span>
+                        </div>
+                    `;
                 });
+                document.getElementById('adm-users-list').innerHTML = adminListHTML;
             }
 
             onValue(ref(db, `users/${user.id}`), (snap) => {
@@ -464,26 +495,14 @@
         window.completeRegistration = async () => {
             const winsInp = document.getElementById('reg-wins');
             const wins = winsInp.value;
-            
             if(!selectedDevice) return alert(t('select_device'));
-            if(!wins) {
-                winsInp.focus();
-                return alert(t('enter_wins'));
-            }
+            if(!wins) { winsInp.focus(); return alert(t('enter_wins')); }
 
             const newUser = {
-                id: user.id,
-                username: user.username || "User",
-                first_name: user.first_name,
-                avatar: user.photo_url || "",
-                device: selectedDevice,
-                self_wins: parseInt(wins),
-                gems: 0,
-                active_title: null,
-                inventory: ['t1'],
-                last_daily: 0
+                id: user.id, username: user.username || "User", first_name: user.first_name,
+                avatar: user.photo_url || "", device: selectedDevice, self_wins: parseInt(wins),
+                gems: 0, active_title: null, inventory: ['t1'], last_daily: 0
             };
-
             await set(ref(db, `users/${user.id}`), newUser);
         };
 
@@ -530,8 +549,9 @@
                 let membersHTML = '';
                 Object.values(myTeam.members).forEach(m => {
                     const isOwner = myTeam.owner_id == m.id;
+                    // CLICKABLE MEMBER PROFILE
                     membersHTML += `
-                    <div class="flex items-center justify-between bg-white/5 p-3 rounded mb-2">
+                    <div onclick="openUserProfile('${m.id}')" class="flex items-center justify-between bg-white/5 p-3 rounded mb-2 cursor-pointer active:bg-white/10">
                         <div class="flex items-center gap-3">
                             <img src="${m.avatar || 'https://placehold.co/50'}" class="w-8 h-8 rounded-full">
                             <div>
@@ -539,7 +559,7 @@
                                 <p class="text-[9px] opacity-50"><i class="fas fa-${m.device == 'pc' ? 'desktop' : 'mobile-alt'}"></i> Wins: ${m.wins}</p>
                             </div>
                         </div>
-                        ${amIOwner && !isOwner ? `<button onclick="kickMember('${tid}', '${myTeam.id}', '${m.id}')" class="text-red-500 text-xs px-2">${t('kick')}</button>` : ''}
+                        ${amIOwner && !isOwner ? `<button onclick="event.stopPropagation(); kickMember('${tid}', '${myTeam.id}', '${m.id}')" class="text-red-500 text-xs px-2">${t('kick')}</button>` : ''}
                     </div>`;
                 });
 
@@ -549,7 +569,7 @@
                     Object.values(myTeam.requests).forEach(req => {
                         requestsHTML += `
                         <div class="flex justify-between items-center bg-yellow-900/10 border border-yellow-500/20 p-2 rounded mb-2">
-                            <div class="flex items-center gap-2">
+                            <div class="flex items-center gap-2" onclick="openUserProfile('${req.id}')">
                                 <img src="${req.avatar}" class="w-6 h-6 rounded-full">
                                 <div><p class="text-[10px] font-bold">${req.name}</p><p class="text-[9px] opacity-50">${req.wins}W</p></div>
                             </div>
@@ -578,7 +598,7 @@
                     const owner = t.members[t.owner_id];
                     teamsListHTML += `
                     <div class="bg-white/5 p-3 rounded mb-2 flex justify-between items-center">
-                        <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-3" onclick="openUserProfile('${owner.id}')">
                             <img src="${owner.avatar}" class="w-8 h-8 rounded-full border border-white/10">
                             <div>
                                 <p class="text-xs font-bold">${t.name}</p>
@@ -602,14 +622,50 @@
             }
         }
 
+        // --- NEW: OPEN USER PROFILE ---
+        window.openUserProfile = async (uid) => {
+            const snap = await get(ref(db, `users/${uid}`));
+            if(!snap.exists()) return;
+            const u = snap.val();
+            
+            document.getElementById('view-avatar').src = u.avatar || 'https://placehold.co/100';
+            document.getElementById('view-name').innerText = u.username || 'User';
+            document.getElementById('view-wins').innerText = u.self_wins;
+            document.getElementById('view-gems').innerText = u.gems;
+            document.getElementById('view-device').innerText = u.device === 'pc' ? "PC" : "PHONE";
+            
+            // Title Badge
+            const activeT = titlesMeta.find(t => t.id === u.active_title);
+            const titleBadge = document.getElementById('view-title-badge');
+            if(activeT) {
+                titleBadge.innerHTML = `<span class="text-[10px] px-2 py-1 rounded border uppercase font-bold rarity-${activeT.rarity}">${activeT.name}</span>`;
+            } else {
+                titleBadge.innerHTML = `<span class="text-[10px] px-2 py-1 rounded border border-white/10 text-gray-400">NO TITLE</span>`;
+            }
+
+            // Inventory
+            let invHTML = "";
+            (u.inventory || []).forEach(tid => {
+                const meta = titlesMeta.find(t => t.id === tid);
+                if(meta) {
+                    invHTML += `
+                    <div class="bg-white/5 p-3 rounded mb-1 flex justify-between items-center border-l-2 rarity-${meta.rarity}">
+                        <span class="font-bold text-sm text-gray-300">${meta.name}</span>
+                        ${u.active_title === tid ? '<i class="fas fa-check text-green-500 text-xs"></i>' : ''}
+                    </div>`;
+                }
+            });
+            document.getElementById('view-inventory-list').innerHTML = invHTML || '<p class="text-center text-xs opacity-30 mt-4">Empty</p>';
+
+            openDrawer('drawer-user-view');
+        };
+
         window.createTeam = async (tid, size) => {
             const name = document.getElementById('new-team-name').value;
             if(!name) return alert(t('enter_name'));
             const teamId = push(ref(db, `teams/${tid}`)).key;
             await set(ref(db, `teams/${tid}/${teamId}`), {
-                id: teamId,
-                name: name.toUpperCase(),
-                owner_id: user.id,
+                id: teamId, name: name.toUpperCase(), owner_id: user.id,
                 members: { [user.id]: { id: user.id, name: user.first_name, wins: dbUser.self_wins, device: dbUser.device, avatar: dbUser.avatar } },
                 locked: false
             });
@@ -635,9 +691,7 @@
             });
         };
 
-        window.declineRequest = async (tid, teamId, reqId) => {
-            await remove(ref(db, `teams/${tid}/${teamId}/requests/${reqId}`));
-        };
+        window.declineRequest = async (tid, teamId, reqId) => { await remove(ref(db, `teams/${tid}/${teamId}/requests/${reqId}`)); };
 
         window.kickMember = async (tid, teamId, memberId) => {
             if(!confirm(t('kick_user'))) return;
