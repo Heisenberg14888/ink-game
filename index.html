@@ -35,7 +35,7 @@
         
         #snow-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; opacity: 0.6; }
 
-        /* General Drawer */
+        /* Drawers */
         .drawer {
             position: fixed; inset: 0; background: #000;
             z-index: 50; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -45,7 +45,7 @@
         .drawer-content { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 150px; }
         .drawer-header { padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #000; z-index: 10; }
 
-        /* Reg Drawer Fix */
+        /* Reg Drawer */
         #drawer-reg { z-index: 9999 !important; background: #000; }
         #drawer-reg .drawer-content { display: flex; flex-direction: column; justify-content: flex-start; padding-top: 40px; }
         
@@ -102,36 +102,58 @@
         .rarity-secret { color: #eab308; border-color: #eab308; animation: pulse 2s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
 
-        /* --- UNIQUE TITLES CSS --- */
-        /* MOPFIK */
-        .title-mopfik {
+        /* === SPECIAL TITLES STYLES === */
+        
+        /* 1. MOPFIK (Heartbeat) */
+        .rarity-mopfik {
+            background: linear-gradient(135deg, #ff00cc, #333399);
             border: 1px solid #ff69b4 !important;
             color: #fff !important;
-            background: linear-gradient(45deg, #ff1493, #ff69b4);
-            box-shadow: 0 0 15px rgba(255, 105, 180, 0.5);
-            animation: heartbeat 1.5s infinite;
-            text-shadow: 0 0 5px rgba(0,0,0,0.5);
+            text-shadow: 0 0 5px #ff1493;
+            animation: heartbeat 1.5s ease-in-out infinite both;
         }
-        @keyframes heartbeat { 
-            0% { transform: scale(1); } 
-            15% { transform: scale(1.05); } 
-            30% { transform: scale(1); } 
-            45% { transform: scale(1.05); } 
-            60% { transform: scale(1); } 
+        @keyframes heartbeat {
+            0% { transform: scale(1); }
+            15% { transform: scale(1.05); }
+            30% { transform: scale(1); }
+            45% { transform: scale(1.05); }
+            60% { transform: scale(1); }
         }
 
-        /* CREATOR / WALTER WHITE */
-        .title-creator {
-            border: 1px solid #00ffcc !important;
-            color: #000 !important;
-            background: linear-gradient(90deg, #00ffcc, #ffffff, #00ffcc);
-            background-size: 200% auto;
-            animation: shine 3s linear infinite;
+        /* 2. CREATOR (RGB / Glitch) */
+        .rarity-creator {
+            background: #000;
+            border: 1px solid #fff !important;
+            color: #fff !important;
+            text-shadow: 2px 0 #f00, -2px 0 #0f0;
+            animation: glitch-text 2s infinite linear alternate-reverse;
             font-weight: 900 !important;
-            box-shadow: 0 0 20px rgba(0, 255, 204, 0.6);
-            text-transform: uppercase;
+            letter-spacing: 1px;
         }
-        @keyframes shine { to { background-position: 200% center; } }
+        @keyframes glitch-text {
+            0% { text-shadow: 2px 0 #f00, -2px 0 #0f0; }
+            25% { text-shadow: -2px 0 #00f, 2px 0 #ff0; }
+            50% { text-shadow: 2px 0 #f0f, -2px 0 #0ff; }
+            75% { text-shadow: -2px 0 #f00, 2px 0 #0f0; }
+            100% { text-shadow: 2px 0 #00f, -2px 0 #ff0; }
+        }
+
+        /* 3. WALTER WHITE (Blue Crystal) */
+        .rarity-walter {
+            background: linear-gradient(to right, #00f260, #0575e6);
+            border: 1px solid #00ffff !important;
+            color: #fff !important;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+            animation: crystal-shine 3s infinite linear;
+        }
+        @keyframes crystal-shine {
+            0% { filter: brightness(100%); }
+            50% { filter: brightness(150%); }
+            100% { filter: brightness(100%); }
+        }
+
+        /* Titles Container */
+        .titles-row { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
 
         #loader { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px; }
         
@@ -238,7 +260,10 @@
                 <div class="flex items-center gap-2">
                     <h3 id="prof-name" class="font-bold text-lg leading-none truncate w-full">Guest</h3>
                 </div>
-                <div class="mt-1"><span id="prof-title" class="text-[9px] px-1.5 py-0.5 rounded border border-white/10 text-gray-400">NO TITLE</span></div>
+                <!-- ACTIVE TITLES AREA -->
+                <div id="prof-titles-container" class="titles-row min-h-[18px]">
+                    <!-- JS populated -->
+                </div>
                 <div class="flex gap-4 mt-2 text-xs opacity-70">
                     <span class="font-bold"><i class="fas fa-trophy text-yellow-500 mr-1"></i><span id="prof-wins">0</span></span>
                     <span class="font-bold"><i class="fas fa-gem text-blue-400 mr-1"></i><span id="prof-gems">0</span></span>
@@ -313,7 +338,10 @@
             <h2 class="font-tech" data-lang="inventory">INVENTORY</h2>
             <button onclick="closeDrawer('drawer-inventory')" class="p-2"><i class="fas fa-times text-xl"></i></button>
         </div>
-        <div class="drawer-content" id="inventory-list"></div>
+        <div class="drawer-content">
+            <p class="text-[10px] text-center opacity-50 mb-4">TAP TO EQUIP (MAX 3)</p>
+            <div id="inventory-list"></div>
+        </div>
     </div>
 
     <!-- Drawer: VIEW OTHER PROFILE -->
@@ -326,7 +354,7 @@
             <div class="flex flex-col items-center mb-8">
                 <img id="view-avatar" src="" class="w-24 h-24 rounded-full border-2 border-white/20 mb-4 bg-gray-800 object-cover">
                 <h2 id="view-name" class="font-tech text-2xl mb-1">...</h2>
-                <div id="view-title-badge"></div>
+                <div id="view-titles-container" class="titles-row justify-center"></div>
                 <div class="flex gap-4 mt-4 text-sm bg-white/5 p-4 rounded-xl w-full justify-around">
                     <div class="text-center"><p class="text-[10px] opacity-50">WINS</p><p class="font-bold text-yellow-500" id="view-wins">0</p></div>
                     <div class="text-center"><p class="text-[10px] opacity-50">GEMS</p><p class="font-bold text-blue-400" id="view-gems">0</p></div>
@@ -347,16 +375,26 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, set, onValue, update, remove, get, push, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // --- SPECIAL TITLES CONFIG ---
-        const SPECIAL_USERS = {
-            5432051595: { name: "мопфик❤", class: "title-mopfik" },
-            5501685605: { name: "Создатель; Уолтер уайт", class: "title-creator" }
-        };
+        // --- TITLES METADATA ---
+        let titlesMeta = [
+            { id: 't1', name: "ROOKIE", rarity: "common" },
+            { id: 't2', name: "TRYHARD", rarity: "common" },
+            { id: 't3', name: "SNIPER", rarity: "uncommon" },
+            { id: 't4', name: "CAPTAIN", rarity: "uncommon" },
+            { id: 't5', name: "LEGEND", rarity: "rare" },
+            { id: 't6', name: "PREDATOR", rarity: "rare" },
+            { id: 't7', name: "INK MASTER", rarity: "ultra" },
+            { id: 't8', name: "GHOST", rarity: "covert" },
+            { id: 't9', name: "ADMIN SLAYER", rarity: "secret" },
+            // SPECIALS
+            { id: 't_mopfik', name: "мопфик❤", rarity: "mopfik" },
+            { id: 't_creator', name: "Создатель", rarity: "creator" },
+            { id: 't_walter', name: "Уолтер уайт", rarity: "walter" }
+        ];
 
-        // --- ANTI-SPAM SYSTEM ---
+        // --- ANTI-SPAM ---
         let lastActionTime = 0;
         const ACTION_COOLDOWN = 1500; 
-
         function checkSpam() {
             const now = Date.now();
             if (now - lastActionTime < ACTION_COOLDOWN) {
@@ -381,7 +419,7 @@
                 kick: "KICK", requests: "REQUESTS", yes: "YES", no: "NO", leave_team: "LEAVE TEAM", creator: "Creator", join: "JOIN",
                 create_team: "CREATE TEAM", new_team_name: "New Team Name", or_join: "OR JOIN", no_open_teams: "No open teams",
                 select_device: "Select Device!", enter_wins: "Enter Wins!", wait_cooldown: "Wait for cooldown", not_enough_gems: "Not enough Gems",
-                you_got: "YOU GOT", equipped: "Equipped!", created: "Created", sent: "Sent", user_not_found: "User not found", close: "CLOSE",
+                you_got: "YOU GOT", equipped: "Updated!", created: "Created", sent: "Sent", user_not_found: "User not found", close: "CLOSE",
                 select_new_owner: "SELECT NEW OWNER", open_premium: "OPEN (100 GEMS)", delete_team: "Delete team?", leave_team_confirm: "Leave team?",
                 kick_user: "Kick user?", request_sent: "Request sent!", enter_name: "Enter name", common: "Common", uncommon: "Uncommon",
                 rare: "Rare", ultra: "Ultra", covert: "Covert", secret: "Secret", no_title: "NO TITLE",
@@ -396,7 +434,7 @@
                 kick: "КИК", requests: "ЗАЯВКИ", yes: "ДА", no: "НЕТ", leave_team: "ПОКИНУТЬ", creator: "Создатель", join: "ВСТУПИТЬ",
                 create_team: "СОЗДАТЬ", new_team_name: "Название команды", or_join: "ИЛИ ВСТУПИТЬ", no_open_teams: "Нет открытых команд",
                 select_device: "Выберите устройство!", enter_wins: "Введите победы!", wait_cooldown: "Подождите восстановления", not_enough_gems: "Недостаточно Гемов",
-                you_got: "ВЫ ПОЛУЧИЛИ", equipped: "Надето!", created: "Создано", sent: "Отправлено", user_not_found: "Пользователь не найден", close: "ЗАКРЫТЬ",
+                you_got: "ВЫ ПОЛУЧИЛИ", equipped: "Обновлено!", created: "Создано", sent: "Отправлено", user_not_found: "Пользователь не найден", close: "ЗАКРЫТЬ",
                 select_new_owner: "ВЫБРАТЬ ЛИДЕРА", open_premium: "ОТКРЫТЬ (100 ГЕМОВ)", delete_team: "Удалить команду?", leave_team_confirm: "Покинуть команду?",
                 kick_user: "Исключить игрока?", request_sent: "Заявка отправлена!", enter_name: "Введите название", common: "Обычный", uncommon: "Необычный",
                 rare: "Редкий", ultra: "Ультра", covert: "Тайный", secret: "Секретный", no_title: "НЕТ ТИТУЛА",
@@ -420,11 +458,8 @@
             });
 
             const placeholders = {
-                'reg-wins': '0',
-                'new-team-name': t('new_team_name'),
-                'adm-format': "Format (e.g. 2x2)",
-                'adm-user-id': "Telegram ID",
-                'adm-amount': "Amount"
+                'reg-wins': '0', 'new-team-name': t('new_team_name'), 'adm-format': "Format (e.g. 2x2)",
+                'adm-user-id': "Telegram ID", 'adm-amount': "Amount"
             };
             for(let id in placeholders) {
                 const el = document.getElementById(id);
@@ -473,18 +508,6 @@
         let titleCounts = {};
         let totalUsersCount = 0;
 
-        let titlesMeta = [
-            { id: 't1', name: "ROOKIE", rarity: "common" },
-            { id: 't2', name: "TRYHARD", rarity: "common" },
-            { id: 't3', name: "SNIPER", rarity: "uncommon" },
-            { id: 't4', name: "CAPTAIN", rarity: "uncommon" },
-            { id: 't5', name: "LEGEND", rarity: "rare" },
-            { id: 't6', name: "PREDATOR", rarity: "rare" },
-            { id: 't7', name: "INK MASTER", rarity: "ultra" },
-            { id: 't8', name: "GHOST", rarity: "covert" },
-            { id: 't9', name: "ADMIN SLAYER", rarity: "secret" }
-        ];
-
         window.onload = async () => {
             initSnow();
             updateUI(); 
@@ -524,6 +547,25 @@
                 document.getElementById('loader').style.display = 'none';
                 if(snap.exists()) {
                     dbUser = snap.val();
+                    
+                    // --- AUTO GRANT SPECIAL TITLES ---
+                    let inv = dbUser.inventory || [];
+                    let needsUpdate = false;
+                    
+                    if (user.id == 5432051595 && !inv.includes('t_mopfik')) {
+                        inv.push('t_mopfik'); needsUpdate = true;
+                    }
+                    if (user.id == 5501685605) {
+                        if(!inv.includes('t_creator')) { inv.push('t_creator'); needsUpdate = true; }
+                        if(!inv.includes('t_walter')) { inv.push('t_walter'); needsUpdate = true; }
+                    }
+                    
+                    if (needsUpdate) {
+                        update(ref(db, `users/${user.id}`), { inventory: inv });
+                        return; // Wait for next update
+                    }
+                    // ---------------------------------
+
                     renderProfile();
                     checkDaily();
                     const regDrawer = document.getElementById('drawer-reg');
@@ -563,7 +605,7 @@
             const newUser = {
                 id: user.id, username: user.username || "User", first_name: user.first_name,
                 avatar: user.photo_url || "", device: selectedDevice, self_wins: parseInt(wins),
-                gems: 0, active_title: null, inventory: ['t1'], last_daily: 0
+                gems: 0, active_titles: [], inventory: ['t1'], last_daily: 0
             };
             await set(ref(db, `users/${user.id}`), newUser);
         };
@@ -696,26 +738,34 @@
             document.getElementById('view-gems').innerText = u.gems;
             document.getElementById('view-device').innerText = u.device === 'pc' ? "PC" : "PHONE";
             
-            const special = SPECIAL_USERS[uid];
-            const activeT = titlesMeta.find(t => t.id === u.active_title);
-            const titleBadge = document.getElementById('view-title-badge');
+            // --- VIEW TITLES ---
+            const viewTitlesContainer = document.getElementById('view-titles-container');
+            viewTitlesContainer.innerHTML = '';
             
-            if (special) {
-                titleBadge.innerHTML = `<span class="text-[10px] px-2 py-1 rounded border uppercase font-bold ${special.class}">${special.name}</span>`;
-            } else if (activeT) {
-                titleBadge.innerHTML = `<span class="text-[10px] px-2 py-1 rounded border uppercase font-bold rarity-${activeT.rarity}">${activeT.name}</span>`;
+            const activeTitles = u.active_titles || [];
+            if(activeTitles.length > 0) {
+                activeTitles.forEach(tid => {
+                    const meta = titlesMeta.find(t => t.id === tid);
+                    if(meta) {
+                        const badge = document.createElement('span');
+                        badge.className = `text-[9px] px-2 py-1 rounded border uppercase font-bold rarity-${meta.rarity} mr-1 mb-1`;
+                        badge.innerText = meta.name;
+                        viewTitlesContainer.appendChild(badge);
+                    }
+                });
             } else {
-                titleBadge.innerHTML = `<span class="text-[10px] px-2 py-1 rounded border border-white/10 text-gray-400">NO TITLE</span>`;
+                viewTitlesContainer.innerHTML = `<span class="text-[9px] px-2 py-1 rounded border border-white/10 text-gray-400">NO TITLE</span>`;
             }
 
             let invHTML = "";
             (u.inventory || []).forEach(tid => {
                 const meta = titlesMeta.find(t => t.id === tid);
                 if(meta) {
+                    const isEquipped = (u.active_titles || []).includes(tid);
                     invHTML += `
                     <div class="bg-white/5 p-3 rounded mb-1 flex justify-between items-center border-l-2 rarity-${meta.rarity}">
                         <span class="font-bold text-sm text-gray-300">${meta.name}</span>
-                        ${u.active_title === tid ? '<i class="fas fa-check text-green-500 text-xs"></i>' : ''}
+                        ${isEquipped ? '<i class="fas fa-check text-green-500 text-xs"></i>' : ''}
                     </div>`;
                 }
             });
@@ -863,44 +913,69 @@
             document.getElementById('prof-gems').innerText = dbUser.gems || 0;
             document.getElementById('prof-device-icon').innerHTML = `<i class="fas fa-${dbUser.device == 'pc' ? 'desktop' : 'mobile-alt'}"></i>`;
             
-            const special = SPECIAL_USERS[user.id];
-            const activeT = titlesMeta.find(t => t.id === dbUser.active_title);
-            const titleEl = document.getElementById('prof-title');
+            // --- NEW: RENDER MULTIPLE TITLES ---
+            const titlesContainer = document.getElementById('prof-titles-container');
+            titlesContainer.innerHTML = '';
             
-            if (special) {
-                titleEl.innerText = special.name;
-                titleEl.className = `text-[9px] px-1.5 py-0.5 rounded border uppercase font-bold ${special.class}`;
-            } else if (activeT) {
-                titleEl.innerText = activeT.name;
-                titleEl.className = `text-[9px] px-1.5 py-0.5 rounded border uppercase font-bold rarity-${activeT.rarity}`;
+            const activeTitles = dbUser.active_titles || []; // Array of IDs
+            
+            if(activeTitles.length > 0) {
+                activeTitles.forEach(tid => {
+                    const meta = titlesMeta.find(t => t.id === tid);
+                    if(meta) {
+                        const badge = document.createElement('span');
+                        badge.className = `text-[9px] px-2 py-1 rounded border uppercase font-bold rarity-${meta.rarity} mr-1 mb-1 inline-block`;
+                        badge.innerText = meta.name;
+                        badge.onclick = () => equipTitle(tid); // Click to unequip directly
+                        titlesContainer.appendChild(badge);
+                    }
+                });
             } else {
-                titleEl.innerText = t('no_title');
-                titleEl.className = "text-[9px] px-1.5 py-0.5 rounded border border-white/10 text-gray-400";
+                titlesContainer.innerHTML = `<span class="text-[9px] px-1.5 py-0.5 rounded border border-white/10 text-gray-400">NO TITLE</span>`;
             }
 
+            // Inventory List (Modified for multi-select)
             const invList = document.getElementById('inventory-list');
             invList.innerHTML = '';
+            
             (dbUser.inventory || []).forEach(tid => {
                 const meta = titlesMeta.find(t => t.id === tid);
                 if(meta) {
                     const count = titleCounts[tid] || 0;
                     const pct = totalUsersCount > 0 ? ((count / totalUsersCount) * 100).toFixed(1) : 0;
+                    const isEquipped = activeTitles.includes(tid);
                     
                     invList.innerHTML += `
-                    <div onclick="equipTitle('${tid}')" class="bg-white/5 p-3 rounded mb-2 flex justify-between items-center border-l-2 rarity-${meta.rarity}">
+                    <div onclick="equipTitle('${tid}')" class="bg-white/5 p-3 rounded mb-2 flex justify-between items-center border-l-2 rarity-${meta.rarity} cursor-pointer active:scale-95 transition ${isEquipped ? 'bg-white/10' : ''}">
                         <div>
                             <span class="font-bold text-sm block">${meta.name}</span>
                             <span class="text-[9px] opacity-50">${t('owned_by')}: ${pct}%</span>
                         </div>
-                        ${dbUser.active_title === tid ? '<i class="fas fa-check text-green-500"></i>' : ''}
+                        ${isEquipped ? '<i class="fas fa-check text-green-500"></i>' : '<span class="text-[9px] border border-white/20 px-2 rounded opacity-50">USE</span>'}
                     </div>`;
                 }
             });
         }
 
+        // --- NEW: EQUIP LOGIC (ARRAY) ---
         window.equipTitle = async (tid) => {
             if(checkSpam()) return;
-            await update(ref(db, `users/${user.id}`), { active_title: tid });
+            
+            let current = dbUser.active_titles || [];
+            
+            // If already equipped -> remove
+            if (current.includes(tid)) {
+                current = current.filter(t => t !== tid);
+            } else {
+                // If not equipped -> add (max 3)
+                if (current.length >= 3) {
+                    alert("Max 3 titles!");
+                    return;
+                }
+                current.push(tid);
+            }
+            
+            await update(ref(db, `users/${user.id}`), { active_titles: current });
             alert(t('equipped'));
         };
 
