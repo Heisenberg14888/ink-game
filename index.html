@@ -102,9 +102,39 @@
         .rarity-secret { color: #eab308; border-color: #eab308; animation: pulse 2s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
 
+        /* --- UNIQUE TITLES CSS --- */
+        /* MOPFIK */
+        .title-mopfik {
+            border: 1px solid #ff69b4 !important;
+            color: #fff !important;
+            background: linear-gradient(45deg, #ff1493, #ff69b4);
+            box-shadow: 0 0 15px rgba(255, 105, 180, 0.5);
+            animation: heartbeat 1.5s infinite;
+            text-shadow: 0 0 5px rgba(0,0,0,0.5);
+        }
+        @keyframes heartbeat { 
+            0% { transform: scale(1); } 
+            15% { transform: scale(1.05); } 
+            30% { transform: scale(1); } 
+            45% { transform: scale(1.05); } 
+            60% { transform: scale(1); } 
+        }
+
+        /* CREATOR / WALTER WHITE */
+        .title-creator {
+            border: 1px solid #00ffcc !important;
+            color: #000 !important;
+            background: linear-gradient(90deg, #00ffcc, #ffffff, #00ffcc);
+            background-size: 200% auto;
+            animation: shine 3s linear infinite;
+            font-weight: 900 !important;
+            box-shadow: 0 0 20px rgba(0, 255, 204, 0.6);
+            text-transform: uppercase;
+        }
+        @keyframes shine { to { background-position: 200% center; } }
+
         #loader { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px; }
         
-        /* SPAM WARNING */
         #spam-warning {
             position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
             background: #ef4444; color: white; padding: 10px 20px; border-radius: 20px;
@@ -317,9 +347,15 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, set, onValue, update, remove, get, push, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+        // --- SPECIAL TITLES CONFIG ---
+        const SPECIAL_USERS = {
+            5432051595: { name: "мопфик❤", class: "title-mopfik" },
+            5501685605: { name: "Создатель; Уолтер уайт", class: "title-creator" }
+        };
+
         // --- ANTI-SPAM SYSTEM ---
         let lastActionTime = 0;
-        const ACTION_COOLDOWN = 1500; // 1.5 seconds
+        const ACTION_COOLDOWN = 1500; 
 
         function checkSpam() {
             const now = Date.now();
@@ -327,10 +363,10 @@
                 const w = document.getElementById('spam-warning');
                 w.style.display = 'block';
                 setTimeout(() => w.style.display = 'none', 1000);
-                return true; // Is spam
+                return true; 
             }
             lastActionTime = now;
-            return false; // Not spam
+            return false;
         }
 
         let currentLang = localStorage.getItem('ink_lang') || 'ru';
@@ -660,9 +696,13 @@
             document.getElementById('view-gems').innerText = u.gems;
             document.getElementById('view-device').innerText = u.device === 'pc' ? "PC" : "PHONE";
             
+            const special = SPECIAL_USERS[uid];
             const activeT = titlesMeta.find(t => t.id === u.active_title);
             const titleBadge = document.getElementById('view-title-badge');
-            if(activeT) {
+            
+            if (special) {
+                titleBadge.innerHTML = `<span class="text-[10px] px-2 py-1 rounded border uppercase font-bold ${special.class}">${special.name}</span>`;
+            } else if (activeT) {
                 titleBadge.innerHTML = `<span class="text-[10px] px-2 py-1 rounded border uppercase font-bold rarity-${activeT.rarity}">${activeT.name}</span>`;
             } else {
                 titleBadge.innerHTML = `<span class="text-[10px] px-2 py-1 rounded border border-white/10 text-gray-400">NO TITLE</span>`;
@@ -823,9 +863,14 @@
             document.getElementById('prof-gems').innerText = dbUser.gems || 0;
             document.getElementById('prof-device-icon').innerHTML = `<i class="fas fa-${dbUser.device == 'pc' ? 'desktop' : 'mobile-alt'}"></i>`;
             
+            const special = SPECIAL_USERS[user.id];
             const activeT = titlesMeta.find(t => t.id === dbUser.active_title);
             const titleEl = document.getElementById('prof-title');
-            if (activeT) {
+            
+            if (special) {
+                titleEl.innerText = special.name;
+                titleEl.className = `text-[9px] px-1.5 py-0.5 rounded border uppercase font-bold ${special.class}`;
+            } else if (activeT) {
                 titleEl.innerText = activeT.name;
                 titleEl.className = `text-[9px] px-1.5 py-0.5 rounded border uppercase font-bold rarity-${activeT.rarity}`;
             } else {
