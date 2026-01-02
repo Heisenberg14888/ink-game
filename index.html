@@ -128,11 +128,10 @@
                 <label class="text-[10px] uppercase opacity-50 block mb-1">Format</label>
                 <input id="adm-format" class="input-nexus mb-3" placeholder="e.g. 2x2">
                 
-                <!-- NEW PRIZE SYSTEM -->
-                <label class="text-[10px] uppercase opacity-50 block mb-1">Prize (Fill one or both)</label>
+                <label class="text-[10px] uppercase opacity-50 block mb-1">Prize</label>
                 <div class="flex gap-2 mb-3">
-                    <input id="adm-prize-rbx" type="number" class="input-nexus" placeholder="Robux Amount">
-                    <input id="adm-prize-gems" type="number" class="input-nexus" placeholder="Gems Amount">
+                    <input id="adm-prize-rbx" type="number" class="input-nexus" placeholder="Robux">
+                    <input id="adm-prize-gems" type="number" class="input-nexus" placeholder="Gems">
                 </div>
 
                 <label class="text-[10px] uppercase opacity-50 block mb-1">Team Size</label>
@@ -160,9 +159,7 @@
                 <p class="text-[10px] opacity-50 tracking-widest uppercase" data-lang="subtitle">Tournament Platform</p>
             </div>
             <div class="flex gap-2">
-                <!-- Lang Switcher -->
                 <button onclick="toggleLang()" class="w-12 h-12 bg-white/5 rounded flex items-center justify-center border border-white/10 font-bold text-xs" id="lang-btn">RU</button>
-                <!-- Shop Button -->
                 <button onclick="openDrawer('drawer-shop')" class="w-12 h-12 bg-white/5 rounded flex items-center justify-center border border-white/10 active:scale-95 transition">
                     <i class="fas fa-shopping-cart text-yellow-500"></i>
                 </button>
@@ -259,9 +256,7 @@
                 <button onclick="openLootbox('premium')" class="btn-nexus bg-purple-600 text-white border-none text-xs py-3" id="btn-premium">OPEN (100 GEMS)</button>
             </div>
             
-            <div class="mt-8 text-[10px] opacity-50 text-center" id="drop-rates">
-                <!-- JS will populate -->
-            </div>
+            <div class="mt-8 text-[10px] opacity-50 text-center" id="drop-rates"></div>
         </div>
     </div>
 
@@ -283,141 +278,42 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, set, onValue, update, remove, get, push, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // --- LOCALIZATION CONFIG ---
         let currentLang = localStorage.getItem('ink_lang') || 'ru';
         
         const translations = {
             en: {
-                subtitle: "Tournament Platform",
-                active_events: "Active Events",
-                welcome: "WELCOME",
-                setup_profile: "Setup your profile to begin",
-                choose_platform: "1. Choose Platform",
-                phone: "PHONE",
-                pc: "PC",
-                total_wins: "2. Total Wins",
-                start_os: "START OS",
-                teams: "TEAMS",
-                shop: "SHOP",
-                daily: "DAILY",
-                free_case: "FREE CASE",
-                common_rare: "Common - Rare Titles",
-                open_free: "OPEN FREE",
-                cooldown: "Cooldown active",
-                premium_case: "PREMIUM CASE",
-                chance_secret: "Chance for Secret Titles",
-                inventory: "INVENTORY",
-                inv: "INV",
-                no_active: "No Active Events",
-                live: "LIVE",
-                solo: "SOLO",
-                duo: "DUO",
-                squad: "SQUAD",
-                loading: "Loading...",
-                kick: "KICK",
-                requests: "REQUESTS",
-                yes: "YES",
-                no: "NO",
-                leave_team: "LEAVE TEAM",
-                creator: "Creator",
-                join: "JOIN",
-                create_team: "CREATE TEAM",
-                new_team_name: "New Team Name",
-                or_join: "OR JOIN",
-                no_open_teams: "No open teams",
-                select_device: "Select Device!",
-                enter_wins: "Enter Wins!",
-                wait_cooldown: "Wait for cooldown",
-                not_enough_gems: "Not enough Gems",
-                you_got: "YOU GOT",
-                equipped: "Equipped!",
-                created: "Created",
-                sent: "Sent",
-                user_not_found: "User not found",
-                close: "CLOSE",
-                select_new_owner: "SELECT NEW OWNER",
-                open_premium: "OPEN (100 GEMS)",
-                delete_team: "Delete team?",
-                leave_team_confirm: "Leave team?",
-                kick_user: "Kick user?",
-                request_sent: "Request sent!",
-                enter_name: "Enter name",
-                common: "Common",
-                uncommon: "Uncommon",
-                rare: "Rare",
-                ultra: "Ultra",
-                covert: "Covert",
-                secret: "Secret",
-                no_title: "NO TITLE"
+                subtitle: "Tournament Platform", active_events: "Active Events", welcome: "WELCOME", setup_profile: "Setup your profile to begin",
+                choose_platform: "1. Choose Platform", phone: "PHONE", pc: "PC", total_wins: "2. Total Wins", start_os: "START OS",
+                teams: "TEAMS", shop: "SHOP", daily: "DAILY", free_case: "FREE CASE", common_rare: "Common - Rare Titles", open_free: "OPEN FREE",
+                cooldown: "Cooldown active", premium_case: "PREMIUM CASE", chance_secret: "Chance for Secret Titles", inventory: "INVENTORY", inv: "INV",
+                no_active: "No Active Events", live: "LIVE", solo: "SOLO", duo: "DUO", squad: "SQUAD", loading: "Loading...",
+                kick: "KICK", requests: "REQUESTS", yes: "YES", no: "NO", leave_team: "LEAVE TEAM", creator: "Creator", join: "JOIN",
+                create_team: "CREATE TEAM", new_team_name: "New Team Name", or_join: "OR JOIN", no_open_teams: "No open teams",
+                select_device: "Select Device!", enter_wins: "Enter Wins!", wait_cooldown: "Wait for cooldown", not_enough_gems: "Not enough Gems",
+                you_got: "YOU GOT", equipped: "Equipped!", created: "Created", sent: "Sent", user_not_found: "User not found", close: "CLOSE",
+                select_new_owner: "SELECT NEW OWNER", open_premium: "OPEN (100 GEMS)", delete_team: "Delete team?", leave_team_confirm: "Leave team?",
+                kick_user: "Kick user?", request_sent: "Request sent!", enter_name: "Enter name", common: "Common", uncommon: "Uncommon",
+                rare: "Rare", ultra: "Ultra", covert: "Covert", secret: "Secret", no_title: "NO TITLE",
+                owned_by: "Owned by"
             },
             ru: {
-                subtitle: "Турнирная Платформа",
-                active_events: "Активные События",
-                welcome: "ДОБРО ПОЖАЛОВАТЬ",
-                setup_profile: "Создайте профиль для начала",
-                choose_platform: "1. Выберите Платформу",
-                phone: "ТЕЛЕФОН",
-                pc: "ПК",
-                total_wins: "2. Количество Побед",
-                start_os: "ЗАПУСК OS",
-                teams: "КОМАНДЫ",
-                shop: "МАГАЗИН",
-                daily: "ЕЖЕДНЕВНО",
-                free_case: "БЕСПЛАТНЫЙ КЕЙС",
-                common_rare: "Обычные - Редкие Титулы",
-                open_free: "ОТКРЫТЬ",
-                cooldown: "Ожидание",
-                premium_case: "ПРЕМИУМ КЕЙС",
-                chance_secret: "Шанс на Секретные Титулы",
-                inventory: "ИНВЕНТАРЬ",
-                inv: "ИНВ",
-                no_active: "Нет активных событий",
-                live: "ИДЕТ",
-                solo: "СОЛО",
-                duo: "ДУО",
-                squad: "ОТРЯД",
-                loading: "Загрузка...",
-                kick: "КИК",
-                requests: "ЗАЯВКИ",
-                yes: "ДА",
-                no: "НЕТ",
-                leave_team: "ПОКИНУТЬ",
-                creator: "Создатель",
-                join: "ВСТУПИТЬ",
-                create_team: "СОЗДАТЬ",
-                new_team_name: "Название команды",
-                or_join: "ИЛИ ВСТУПИТЬ",
-                no_open_teams: "Нет открытых команд",
-                select_device: "Выберите устройство!",
-                enter_wins: "Введите победы!",
-                wait_cooldown: "Подождите восстановления",
-                not_enough_gems: "Недостаточно Гемов",
-                you_got: "ВЫ ПОЛУЧИЛИ",
-                equipped: "Надето!",
-                created: "Создано",
-                sent: "Отправлено",
-                user_not_found: "Пользователь не найден",
-                close: "ЗАКРЫТЬ",
-                select_new_owner: "ВЫБРАТЬ ЛИДЕРА",
-                open_premium: "ОТКРЫТЬ (100 ГЕМОВ)",
-                delete_team: "Удалить команду?",
-                leave_team_confirm: "Покинуть команду?",
-                kick_user: "Исключить игрока?",
-                request_sent: "Заявка отправлена!",
-                enter_name: "Введите название",
-                common: "Обычный",
-                uncommon: "Необычный",
-                rare: "Редкий",
-                ultra: "Ультра",
-                covert: "Тайный",
-                secret: "Секретный",
-                no_title: "НЕТ ТИТУЛА"
+                subtitle: "Турнирная Платформа", active_events: "Активные События", welcome: "ДОБРО ПОЖАЛОВАТЬ", setup_profile: "Создайте профиль для начала",
+                choose_platform: "1. Выберите Платформу", phone: "ТЕЛЕФОН", pc: "ПК", total_wins: "2. Количество Побед", start_os: "ЗАПУСК OS",
+                teams: "КОМАНДЫ", shop: "МАГАЗИН", daily: "ЕЖЕДНЕВНО", free_case: "БЕСПЛАТНЫЙ КЕЙС", common_rare: "Обычные - Редкие Титулы", open_free: "ОТКРЫТЬ",
+                cooldown: "Ожидание", premium_case: "ПРЕМИУМ КЕЙС", chance_secret: "Шанс на Секретные Титулы", inventory: "ИНВЕНТАРЬ", inv: "ИНВ",
+                no_active: "Нет активных событий", live: "ИДЕТ", solo: "СОЛО", duo: "ДУО", squad: "ОТРЯД", loading: "Загрузка...",
+                kick: "КИК", requests: "ЗАЯВКИ", yes: "ДА", no: "НЕТ", leave_team: "ПОКИНУТЬ", creator: "Создатель", join: "ВСТУПИТЬ",
+                create_team: "СОЗДАТЬ", new_team_name: "Название команды", or_join: "ИЛИ ВСТУПИТЬ", no_open_teams: "Нет открытых команд",
+                select_device: "Выберите устройство!", enter_wins: "Введите победы!", wait_cooldown: "Подождите восстановления", not_enough_gems: "Недостаточно Гемов",
+                you_got: "ВЫ ПОЛУЧИЛИ", equipped: "Надето!", created: "Создано", sent: "Отправлено", user_not_found: "Пользователь не найден", close: "ЗАКРЫТЬ",
+                select_new_owner: "ВЫБРАТЬ ЛИДЕРА", open_premium: "ОТКРЫТЬ (100 ГЕМОВ)", delete_team: "Удалить команду?", leave_team_confirm: "Покинуть команду?",
+                kick_user: "Исключить игрока?", request_sent: "Заявка отправлена!", enter_name: "Введите название", common: "Обычный", uncommon: "Необычный",
+                rare: "Редкий", ultra: "Ультра", covert: "Тайный", secret: "Секретный", no_title: "НЕТ ТИТУЛА",
+                owned_by: "Владеют"
             }
         };
 
-        function t(key) {
-            return translations[currentLang][key] || key;
-        }
+        function t(key) { return translations[currentLang][key] || key; }
 
         window.toggleLang = () => {
             currentLang = currentLang === 'ru' ? 'en' : 'ru';
@@ -427,26 +323,25 @@
 
         function updateUI() {
             document.getElementById('lang-btn').innerText = currentLang.toUpperCase();
-            
-            // Update static elements
             document.querySelectorAll('[data-lang]').forEach(el => {
                 const key = el.getAttribute('data-lang');
                 if(translations[currentLang][key]) el.innerText = translations[currentLang][key];
             });
 
-            // Update placeholders
             const placeholders = {
-                'reg-wins': currentLang === 'ru' ? '0' : '0',
+                'reg-wins': '0',
                 'new-team-name': t('new_team_name'),
                 'adm-format': "Format (e.g. 2x2)",
                 'adm-user-id': "Telegram ID",
                 'adm-amount': "Amount"
             };
+            for(let id in placeholders) {
+                const el = document.getElementById(id);
+                if(el) el.placeholder = placeholders[id];
+            }
             
-            // Specific updates
             document.getElementById('btn-premium').innerText = t('open_premium');
             
-            // Drop rates
             const rates = `
                 <p class="mb-1">${t('common')}: 50% | ${t('uncommon')}: 30%</p>
                 <p class="mb-1">${t('rare')}: 15% | ${t('ultra')}: 4% | ${t('covert')}: 0.9%</p>
@@ -454,13 +349,9 @@
             `;
             document.getElementById('drop-rates').innerHTML = rates;
 
-            // Re-render dynamic parts if data exists
             if(dbUser) renderProfile();
-            // Force re-render of tournament list (needs snapshot, tricky, but works on next update)
-            // Ideally we would trigger a refresh, but Firebase listener will handle updates automatically
         }
 
-        // --- FIREBASE CONFIG ---
         const firebaseConfig = {
             apiKey: "AIzaSyCK7gn8Xl-AW93FTni7q7Rx1QTUw0ILiCs",
             authDomain: "ink-game-843c1.firebaseapp.com",
@@ -488,6 +379,9 @@
 
         let dbUser = null;
         let selectedDevice = null;
+        let titleCounts = {};
+        let totalUsersCount = 0;
+
         let titlesMeta = [
             { id: 't1', name: "ROOKIE", rarity: "common" },
             { id: 't2', name: "TRYHARD", rarity: "common" },
@@ -502,7 +396,7 @@
 
         window.onload = async () => {
             initSnow();
-            updateUI(); // Set initial language
+            updateUI(); 
             
             setTimeout(() => {
                 const loader = document.getElementById('loader');
@@ -510,6 +404,20 @@
             }, 5000);
 
             if(ADMIN_IDS.includes(user.id)) document.getElementById('admin-trigger').style.display = 'flex';
+
+            // STATS CALCULATION
+            const allUsersSnap = await get(ref(db, 'users'));
+            if(allUsersSnap.exists()) {
+                totalUsersCount = allUsersSnap.size;
+                allUsersSnap.forEach(uSnap => {
+                    const u = uSnap.val();
+                    if(u.inventory) {
+                        u.inventory.forEach(tid => {
+                            titleCounts[tid] = (titleCounts[tid] || 0) + 1;
+                        });
+                    }
+                });
+            }
 
             onValue(ref(db, `users/${user.id}`), (snap) => {
                 document.getElementById('loader').style.display = 'none';
@@ -530,7 +438,6 @@
             onValue(ref(db, 'tournaments'), renderTournaments);
         };
 
-        // --- MOBILE INPUT SCROLL FIX ---
         window.scrollToInput = (el) => {
             setTimeout(() => {
                 el.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -838,9 +745,16 @@
             (dbUser.inventory || []).forEach(tid => {
                 const meta = titlesMeta.find(t => t.id === tid);
                 if(meta) {
+                    // CALC PERCENTAGE
+                    const count = titleCounts[tid] || 0;
+                    const pct = totalUsersCount > 0 ? ((count / totalUsersCount) * 100).toFixed(1) : 0;
+                    
                     invList.innerHTML += `
                     <div onclick="equipTitle('${tid}')" class="bg-white/5 p-3 rounded mb-2 flex justify-between items-center border-l-2 rarity-${meta.rarity}">
-                        <span class="font-bold text-sm">${meta.name}</span>
+                        <div>
+                            <span class="font-bold text-sm block">${meta.name}</span>
+                            <span class="text-[9px] opacity-50">${t('owned_by')}: ${pct}%</span>
+                        </div>
                         ${dbUser.active_title === tid ? '<i class="fas fa-check text-green-500"></i>' : ''}
                     </div>`;
                 }
@@ -856,11 +770,8 @@
         
         window.createTournament = async () => {
             const format = document.getElementById('adm-format').value;
-            
-            // PRIZE LOGIC
             const rbx = document.getElementById('adm-prize-rbx').value;
             const gems = document.getElementById('adm-prize-gems').value;
-            
             if(!format) return alert("Format required");
             if(!rbx && !gems) return alert("Prize required");
             
@@ -870,15 +781,10 @@
             if(gems) prizeStr += `${gems} 💎`;
 
             const size = document.getElementById('adm-team-size').value;
-            
             const tid = push(ref(db, 'tournaments')).key;
             await set(ref(db, `tournaments/${tid}`), { 
-                id: tid, 
-                format: format, 
-                prize: prizeStr, // Use composed prize string
-                team_size: parseInt(size), 
-                mode: parseInt(size), 
-                active: true 
+                id: tid, format: format, prize: prizeStr, 
+                team_size: parseInt(size), mode: parseInt(size), active: true 
             });
             alert(t('created'));
             toggleAdmin();
