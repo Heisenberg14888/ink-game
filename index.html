@@ -84,7 +84,10 @@
         .btn-nexus { 
             background: var(--accent); color: black; font-weight: 800; text-transform: uppercase;
             padding: 16px; width: 100%; border-radius: 8px; display: flex; justify-content: center; align-items: center; gap: 8px;
+            transition: all 0.2s;
         }
+        .btn-nexus:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); }
+
         .input-nexus {
             background: #161616; border: 1px solid #333; color: white; padding: 12px; width: 100%; border-radius: 6px; outline: none;
         }
@@ -100,6 +103,14 @@
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
 
         #loader { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px; }
+        
+        /* SPAM WARNING */
+        #spam-warning {
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+            background: #ef4444; color: white; padding: 10px 20px; border-radius: 20px;
+            font-weight: bold; font-size: 12px; z-index: 10000; display: none;
+            box-shadow: 0 5px 20px rgba(239, 68, 68, 0.5);
+        }
     </style>
 </head>
 <body>
@@ -109,6 +120,8 @@
         <i class="fas fa-circle-notch fa-spin text-4xl text-white"></i>
         <p class="text-xs text-gray-500 mt-2">Connecting...</p>
     </div>
+
+    <div id="spam-warning">SLOW DOWN! 🛑</div>
 
     <!-- Admin Trigger -->
     <div id="admin-trigger" class="admin-pull-tab flex justify-center items-center" onclick="toggleAdmin()">
@@ -130,26 +143,25 @@
 
             <!-- Users List -->
             <div class="card border-white/10">
-                <h3 class="font-bold text-sm mb-3">ALL USERS (CLICK TO VIEW)</h3>
-                <div id="adm-users-list" class="max-h-[200px] overflow-y-auto space-y-2 pr-1">
-                    <!-- JS Populated -->
-                </div>
+                <h3 class="font-bold text-sm mb-3">ALL USERS</h3>
+                <div id="adm-users-list" class="max-h-[200px] overflow-y-auto space-y-2 pr-1"></div>
             </div>
 
             <!-- Actions -->
             <div class="card">
                 <h3 class="font-bold mb-4 text-sm text-center">CREATE TOURNAMENT</h3>
-                <input id="adm-format" class="input-nexus mb-3" placeholder="Format (2x2)">
+                
+                <input id="adm-format" class="input-nexus mb-3" placeholder="Format (e.g. 2x2)">
                 <div class="flex gap-2 mb-3">
                     <input id="adm-prize-rbx" type="number" class="input-nexus" placeholder="Robux">
                     <input id="adm-prize-gems" type="number" class="input-nexus" placeholder="Gems">
                 </div>
                 <select id="adm-team-size" class="input-nexus mb-4">
-                    <option value="1">Solo</option>
-                    <option value="2">Duo</option>
-                    <option value="4">Squad</option>
+                    <option value="1">Solo (1)</option>
+                    <option value="2">Duo (2)</option>
+                    <option value="4">Squad (4)</option>
                 </select>
-                <button onclick="createTournament()" class="btn-nexus bg-red-600 text-white border-none py-4">PUBLISH</button>
+                <button onclick="createTournament()" class="btn-nexus bg-red-600 text-white border-none py-4">PUBLISH EVENT</button>
             </div>
             
             <div class="card">
@@ -291,7 +303,6 @@
                     <div class="text-center"><p class="text-[10px] opacity-50">DEVICE</p><p class="font-bold" id="view-device">-</p></div>
                 </div>
             </div>
-            
             <h3 class="text-xs font-bold opacity-50 mb-4 px-1">INVENTORY</h3>
             <div id="view-inventory-list" class="space-y-2"></div>
         </div>
@@ -305,6 +316,22 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, set, onValue, update, remove, get, push, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // --- ANTI-SPAM SYSTEM ---
+        let lastActionTime = 0;
+        const ACTION_COOLDOWN = 1500; // 1.5 seconds
+
+        function checkSpam() {
+            const now = Date.now();
+            if (now - lastActionTime < ACTION_COOLDOWN) {
+                const w = document.getElementById('spam-warning');
+                w.style.display = 'block';
+                setTimeout(() => w.style.display = 'none', 1000);
+                return true; // Is spam
+            }
+            lastActionTime = now;
+            return false; // Not spam
+        }
 
         let currentLang = localStorage.getItem('ink_lang') || 'ru';
         
@@ -442,12 +469,10 @@
                 let adminListHTML = '';
                 allUsersSnap.forEach(uSnap => {
                     const u = uSnap.val();
-                    // Calc title stats
                     if(u.inventory) u.inventory.forEach(tid => titleCounts[tid] = (titleCounts[tid] || 0) + 1);
                     
-                    // Render Admin List Item
                     adminListHTML += `
-                        <div onclick="openUserProfile('${u.id}')" class="flex justify-between items-center bg-white/5 p-2 rounded cursor-pointer hover:bg-white/10">
+                        <div onclick="openUserProfile('${u.id}')" class="flex justify-between items-center bg-white/5 p-2 rounded cursor-pointer hover:bg-white/10 active:bg-white/20">
                             <div class="flex items-center gap-2">
                                 <img src="${u.avatar || 'https://placehold.co/50'}" class="w-6 h-6 rounded-full">
                                 <span class="text-xs font-bold truncate w-24">${u.username}</span>
@@ -493,6 +518,7 @@
         };
 
         window.completeRegistration = async () => {
+            if(checkSpam()) return;
             const winsInp = document.getElementById('reg-wins');
             const wins = winsInp.value;
             if(!selectedDevice) return alert(t('select_device'));
@@ -530,6 +556,7 @@
         }
 
         window.openTournament = async (tid) => {
+            if(checkSpam()) return;
             openDrawer('drawer-team');
             const content = document.getElementById('team-content');
             content.innerHTML = `<div class="text-center p-4">${t('loading')}</div>`;
@@ -549,7 +576,6 @@
                 let membersHTML = '';
                 Object.values(myTeam.members).forEach(m => {
                     const isOwner = myTeam.owner_id == m.id;
-                    // CLICKABLE MEMBER PROFILE
                     membersHTML += `
                     <div onclick="openUserProfile('${m.id}')" class="flex items-center justify-between bg-white/5 p-3 rounded mb-2 cursor-pointer active:bg-white/10">
                         <div class="flex items-center gap-3">
@@ -622,8 +648,8 @@
             }
         }
 
-        // --- NEW: OPEN USER PROFILE ---
         window.openUserProfile = async (uid) => {
+            if(checkSpam()) return;
             const snap = await get(ref(db, `users/${uid}`));
             if(!snap.exists()) return;
             const u = snap.val();
@@ -634,7 +660,6 @@
             document.getElementById('view-gems').innerText = u.gems;
             document.getElementById('view-device').innerText = u.device === 'pc' ? "PC" : "PHONE";
             
-            // Title Badge
             const activeT = titlesMeta.find(t => t.id === u.active_title);
             const titleBadge = document.getElementById('view-title-badge');
             if(activeT) {
@@ -643,7 +668,6 @@
                 titleBadge.innerHTML = `<span class="text-[10px] px-2 py-1 rounded border border-white/10 text-gray-400">NO TITLE</span>`;
             }
 
-            // Inventory
             let invHTML = "";
             (u.inventory || []).forEach(tid => {
                 const meta = titlesMeta.find(t => t.id === tid);
@@ -661,6 +685,7 @@
         };
 
         window.createTeam = async (tid, size) => {
+            if(checkSpam()) return;
             const name = document.getElementById('new-team-name').value;
             if(!name) return alert(t('enter_name'));
             const teamId = push(ref(db, `teams/${tid}`)).key;
@@ -672,6 +697,7 @@
         };
 
         window.sendJoinRequest = async (tid, teamId) => {
+            if(checkSpam()) return;
             await set(ref(db, `teams/${tid}/${teamId}/requests/${user.id}`), {
                 id: user.id, name: user.first_name, wins: dbUser.self_wins, device: dbUser.device, avatar: dbUser.avatar
             });
@@ -679,6 +705,7 @@
         };
 
         window.acceptRequest = async (tid, teamId, reqId) => {
+            if(checkSpam()) return;
             const teamRef = ref(db, `teams/${tid}/${teamId}`);
             runTransaction(teamRef, (team) => {
                 if (team && team.requests && team.requests[reqId]) {
@@ -694,12 +721,14 @@
         window.declineRequest = async (tid, teamId, reqId) => { await remove(ref(db, `teams/${tid}/${teamId}/requests/${reqId}`)); };
 
         window.kickMember = async (tid, teamId, memberId) => {
+            if(checkSpam()) return;
             if(!confirm(t('kick_user'))) return;
             await remove(ref(db, `teams/${tid}/${teamId}/members/${memberId}`));
             await update(ref(db, `teams/${tid}/${teamId}`), { locked: false });
         };
 
         window.leaveTeam = async (tid, teamId, isOwner) => {
+            if(checkSpam()) return;
             const teamRef = ref(db, `teams/${tid}/${teamId}`);
             const snap = await get(teamRef);
             const team = snap.val();
@@ -736,6 +765,7 @@
         window.closeModal = () => document.getElementById('modal-overlay').classList.add('hidden');
 
         window.openLootbox = async (type) => {
+            if(checkSpam()) return;
             if (type === 'daily') {
                 const now = Date.now();
                 if (now - (dbUser.last_daily || 0) < 86400000) return alert(t('wait_cooldown'));
@@ -824,6 +854,7 @@
         }
 
         window.equipTitle = async (tid) => {
+            if(checkSpam()) return;
             await update(ref(db, `users/${user.id}`), { active_title: tid });
             alert(t('equipped'));
         };
@@ -831,6 +862,7 @@
         window.toggleAdmin = () => document.getElementById('admin-curtain').classList.toggle('active');
         
         window.createTournament = async () => {
+            if(checkSpam()) return;
             const format = document.getElementById('adm-format').value;
             const rbx = document.getElementById('adm-prize-rbx').value;
             const gems = document.getElementById('adm-prize-gems').value;
