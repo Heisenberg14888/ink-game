@@ -122,6 +122,12 @@
             <button onclick="toggleAdmin()" class="text-sm border border-white/20 px-4 py-2 rounded bg-white/10" data-lang="close">CLOSE</button>
         </div>
         <div class="space-y-6">
+            <!-- NEW: User Count Card -->
+            <div class="card border-blue-500/30 bg-blue-900/10">
+                <h3 class="font-bold text-xs text-blue-400 mb-1" data-lang="total_users_title">TOTAL USERS</h3>
+                <p class="font-tech text-3xl" id="adm-total-users">0</p>
+            </div>
+
             <div class="card">
                 <h3 class="font-bold mb-4 text-sm text-center">CREATE TOURNAMENT</h3>
                 
@@ -177,16 +183,17 @@
         </div>
         <div class="profile-content p-4 flex items-center gap-4">
             <div class="relative">
-                <img id="prof-avatar" src="" class="w-14 h-14 rounded-full border border-white/20 bg-gray-800 object-cover">
+                <!-- FIX: Added flex-shrink-0 to prevent oval shape -->
+                <img id="prof-avatar" src="" class="w-14 h-14 rounded-full border border-white/20 bg-gray-800 object-cover flex-shrink-0">
                 <div id="prof-device-icon" class="absolute -bottom-1 -right-1 w-6 h-6 bg-black rounded-full flex items-center justify-center text-xs border border-white/20">
                     <i class="fas fa-mobile-alt"></i>
                 </div>
             </div>
-            <div class="flex-1">
+            <div class="flex-1 overflow-hidden">
                 <div class="flex items-center gap-2">
-                    <h3 id="prof-name" class="font-bold text-lg leading-none truncate max-w-[150px]">Guest</h3>
-                    <span id="prof-title" class="text-[9px] px-1.5 py-0.5 rounded border border-white/10 text-gray-400">NO TITLE</span>
+                    <h3 id="prof-name" class="font-bold text-lg leading-none truncate w-full">Guest</h3>
                 </div>
+                <div class="mt-1"><span id="prof-title" class="text-[9px] px-1.5 py-0.5 rounded border border-white/10 text-gray-400">NO TITLE</span></div>
                 <div class="flex gap-4 mt-2 text-xs opacity-70">
                     <span class="font-bold"><i class="fas fa-trophy text-yellow-500 mr-1"></i><span id="prof-wins">0</span></span>
                     <span class="font-bold"><i class="fas fa-gem text-blue-400 mr-1"></i><span id="prof-gems">0</span></span>
@@ -294,7 +301,7 @@
                 select_new_owner: "SELECT NEW OWNER", open_premium: "OPEN (100 GEMS)", delete_team: "Delete team?", leave_team_confirm: "Leave team?",
                 kick_user: "Kick user?", request_sent: "Request sent!", enter_name: "Enter name", common: "Common", uncommon: "Uncommon",
                 rare: "Rare", ultra: "Ultra", covert: "Covert", secret: "Secret", no_title: "NO TITLE",
-                owned_by: "Owned by"
+                owned_by: "Owned by", total_users_title: "TOTAL USERS"
             },
             ru: {
                 subtitle: "Турнирная Платформа", active_events: "Активные События", welcome: "ДОБРО ПОЖАЛОВАТЬ", setup_profile: "Создайте профиль для начала",
@@ -309,7 +316,7 @@
                 select_new_owner: "ВЫБРАТЬ ЛИДЕРА", open_premium: "ОТКРЫТЬ (100 ГЕМОВ)", delete_team: "Удалить команду?", leave_team_confirm: "Покинуть команду?",
                 kick_user: "Исключить игрока?", request_sent: "Заявка отправлена!", enter_name: "Введите название", common: "Обычный", uncommon: "Необычный",
                 rare: "Редкий", ultra: "Ультра", covert: "Тайный", secret: "Секретный", no_title: "НЕТ ТИТУЛА",
-                owned_by: "Владеют"
+                owned_by: "Владеют", total_users_title: "ВСЕГО УЧАСТНИКОВ"
             }
         };
 
@@ -409,6 +416,8 @@
             const allUsersSnap = await get(ref(db, 'users'));
             if(allUsersSnap.exists()) {
                 totalUsersCount = allUsersSnap.size;
+                document.getElementById('adm-total-users').innerText = totalUsersCount; // ADMIN STATS
+                
                 allUsersSnap.forEach(uSnap => {
                     const u = uSnap.val();
                     if(u.inventory) {
@@ -745,7 +754,6 @@
             (dbUser.inventory || []).forEach(tid => {
                 const meta = titlesMeta.find(t => t.id === tid);
                 if(meta) {
-                    // CALC PERCENTAGE
                     const count = titleCounts[tid] || 0;
                     const pct = totalUsersCount > 0 ? ((count / totalUsersCount) * 100).toFixed(1) : 0;
                     
