@@ -17,7 +17,7 @@
             --accent: #ffffff;
             --border: #222;
             
-            /* Цвета редкости */
+            /* Colors */
             --c-common: #a1a1aa;
             --c-uncommon: #22c55e;
             --c-rare: #3b82f6;
@@ -218,7 +218,10 @@
             </div>
             <div class="flex-1 overflow-hidden">
                 <div class="flex items-center gap-2"><h3 id="prof-name" class="font-bold text-lg leading-none truncate w-full">Guest</h3></div>
-                <div class="mt-1"><span id="prof-title" class="text-[9px] px-1.5 py-0.5 rounded border border-white/10 text-gray-400">NO TITLE</span></div>
+                <!-- 3 TITLES CONTAINER -->
+                <div id="prof-titles-container" class="mt-1 flex flex-wrap gap-1">
+                    <span class="text-[9px] px-1.5 py-0.5 rounded border border-white/10 text-gray-400">NO TITLE</span>
+                </div>
                 <div class="flex gap-4 mt-2 text-xs opacity-70">
                     <span class="font-bold"><i class="fas fa-trophy text-yellow-500 mr-1"></i><span id="prof-wins">0</span></span>
                     <span class="font-bold"><i class="fas fa-gem text-blue-400 mr-1"></i><span id="prof-gems">0</span></span>
@@ -279,7 +282,7 @@
     </div>
 
     <div id="drawer-inventory" class="drawer">
-        <div class="drawer-header"><h2 class="font-tech" data-lang="inventory">INVENTORY</h2><button onclick="closeDrawer('drawer-inventory')" class="p-2"><i class="fas fa-times text-xl"></i></button></div>
+        <div class="drawer-header"><h2 class="font-tech" data-lang="inventory">INVENTORY (MAX 3)</h2><button onclick="closeDrawer('drawer-inventory')" class="p-2"><i class="fas fa-times text-xl"></i></button></div>
         <div class="drawer-content" id="inventory-list"></div>
     </div>
 
@@ -289,7 +292,7 @@
             <div class="flex flex-col items-center mb-8">
                 <img id="view-avatar" src="" class="w-24 h-24 rounded-full border-2 border-white/20 mb-4 bg-gray-800 object-cover">
                 <h2 id="view-name" class="font-tech text-2xl mb-1">...</h2>
-                <div id="view-title-badge"></div>
+                <div id="view-titles-container" class="flex gap-1 flex-wrap justify-center"></div>
                 <div class="flex gap-4 mt-4 text-sm bg-white/5 p-4 rounded-xl w-full justify-around">
                     <div class="text-center"><p class="text-[10px] opacity-50">WINS</p><p class="font-bold text-yellow-500" id="view-wins">0</p></div>
                     <div class="text-center"><p class="text-[10px] opacity-50">GEMS</p><p class="font-bold text-blue-400" id="view-gems">0</p></div>
@@ -342,12 +345,11 @@
         let adminActiveTeams = {};
 
         function checkSpam() {
-            if (Date.now() - lastActionTime < 1500) return true;
+            if (Date.now() - lastActionTime < 1000) return true;
             lastActionTime = Date.now();
             return false;
         }
 
-        // --- TITLES CONFIG (Added Custom Titles) ---
         const titlesMeta = [
             { id: 't1', name: "ROOKIE", rarity: "common" },
             { id: 't2', name: "TRYHARD", rarity: "common" },
@@ -358,8 +360,7 @@
             { id: 't7', name: "INK MASTER", rarity: "ultra" },
             { id: 't8', name: "GHOST", rarity: "covert" },
             { id: 't9', name: "ADMIN SLAYER", rarity: "secret" },
-            
-            // CUSTOM TITLES (Added manually)
+            // CUSTOM TITLES
             { id: 't_mopfik', name: "мопфик❤", rarity: "secret" },
             { id: 't_walter', name: "Уолтер Уайт", rarity: "secret" },
             { id: 't_creator', name: "Создатель", rarity: "secret" }
@@ -456,7 +457,7 @@
                     }
                     if(needsUpdate) {
                         update(ref(db, `users/${user.id}`), { inventory: newInv });
-                        return; // listener will trigger again
+                        return;
                     }
 
                     renderProfile();
@@ -501,7 +502,7 @@
             const wins = document.getElementById('reg-wins').value;
             if(!selectedDevice) return alert(t('select_device'));
             if(!wins) return alert(t('enter_wins'));
-            const newUser = { id: user.id, username: user.username || "User", first_name: user.first_name, avatar: user.photo_url || "", device: selectedDevice, self_wins: parseInt(wins), gems: 0, active_title: null, inventory: ['t1'], last_daily: 0 };
+            const newUser = { id: user.id, username: user.username || "User", first_name: user.first_name, avatar: user.photo_url || "", device: selectedDevice, self_wins: parseInt(wins), gems: 0, active_titles: [], inventory: ['t1'], last_daily: 0 };
             await set(ref(db, `users/${user.id}`), newUser);
         };
 
@@ -598,10 +599,22 @@
             document.getElementById('view-wins').innerText = u.self_wins;
             document.getElementById('view-gems').innerText = u.gems;
             document.getElementById('view-device').innerText = u.device === 'pc' ? "PC" : "PHONE";
-            const activeT = titlesMeta.find(t => t.id === u.active_title);
-            document.getElementById('view-title-badge').innerHTML = activeT ? `<span class="text-[10px] px-2 py-1 rounded border uppercase font-bold rarity-${activeT.rarity}">${activeT.name}</span>` : `<span class="text-[10px] px-2 py-1 rounded border border-white/10 text-gray-400">NO TITLE</span>`;
+            
+            // VIEW TITLES ARRAY
+            const container = document.getElementById('view-titles-container');
+            const actives = Array.isArray(u.active_titles) ? u.active_titles : (u.active_title ? [u.active_title] : []);
+            
+            if(actives.length > 0) {
+                container.innerHTML = actives.map(tid => {
+                    const t = titlesMeta.find(x => x.id === tid);
+                    return t ? `<span class="text-[9px] px-2 py-1 rounded border uppercase font-bold rarity-${t.rarity}">${t.name}</span>` : '';
+                }).join('');
+            } else {
+                container.innerHTML = `<span class="text-[10px] px-2 py-1 rounded border border-white/10 text-gray-400">NO TITLE</span>`;
+            }
+
             let inv = (u.inventory || []).sort((a,b) => { const mA = titlesMeta.find(t=>t.id===a), mB = titlesMeta.find(t=>t.id===b); return (rarityOrder[mA.rarity] - rarityOrder[mB.rarity]); });
-            document.getElementById('view-inventory-list').innerHTML = inv.map(tid => { const meta = titlesMeta.find(t => t.id === tid); return meta ? `<div class="bg-white/5 p-3 rounded mb-1 flex justify-between items-center border-l-2 rarity-${meta.rarity}"><span class="font-bold text-sm text-gray-300">${meta.name}</span>${u.active_title === tid ? '<i class="fas fa-check text-green-500 text-xs"></i>' : ''}</div>` : ''; }).join('') || '<p class="text-center text-xs opacity-30 mt-4">Empty</p>';
+            document.getElementById('view-inventory-list').innerHTML = inv.map(tid => { const meta = titlesMeta.find(t => t.id === tid); return meta ? `<div class="bg-white/5 p-3 rounded mb-1 flex justify-between items-center border-l-2 rarity-${meta.rarity}"><span class="font-bold text-sm text-gray-300">${meta.name}</span>${actives.includes(tid) ? '<i class="fas fa-check text-green-500 text-xs"></i>' : ''}</div>` : ''; }).join('') || '<p class="text-center text-xs opacity-30 mt-4">Empty</p>';
             openDrawer('drawer-user-view');
         };
 
@@ -683,11 +696,21 @@
             document.getElementById('prof-avatar').src = dbUser.avatar || "https://placehold.co/100";
             document.getElementById('prof-wins').innerText = dbUser.self_wins;
             document.getElementById('prof-gems').innerText = dbUser.gems || 0;
-            const activeT = titlesMeta.find(t => t.id === dbUser.active_title);
-            document.getElementById('prof-title').innerText = activeT ? activeT.name : t('no_title');
-            document.getElementById('prof-title').className = activeT ? `text-[9px] px-1.5 py-0.5 rounded border uppercase font-bold rarity-${activeT.rarity}` : "text-[9px] px-1.5 py-0.5 rounded border border-white/10 text-gray-400";
+            
+            // RENDER 3 TITLES
+            const container = document.getElementById('prof-titles-container');
+            const actives = Array.isArray(dbUser.active_titles) ? dbUser.active_titles : (dbUser.active_title ? [dbUser.active_title] : []);
+            
+            if(actives.length > 0) {
+                container.innerHTML = actives.map(tid => {
+                    const t = titlesMeta.find(x => x.id === tid);
+                    return t ? `<span class="text-[9px] px-1.5 py-0.5 rounded border uppercase font-bold rarity-${t.rarity}">${t.name}</span>` : '';
+                }).join('');
+            } else {
+                container.innerHTML = `<span class="text-[9px] px-1.5 py-0.5 rounded border border-white/10 text-gray-400">NO TITLE</span>`;
+            }
 
-            // SORT INVENTORY BY RARITY
+            // SORT INVENTORY
             const sortedInv = (dbUser.inventory || []).sort((a, b) => {
                 const metaA = titlesMeta.find(t => t.id === a);
                 const metaB = titlesMeta.find(t => t.id === b);
@@ -702,15 +725,26 @@
                 if(meta) {
                     const count = titleCounts[tid] || 0;
                     const pct = totalUsersCount > 0 ? ((count / totalUsersCount) * 100).toFixed(1) : 0;
-                    invList.innerHTML += `<div onclick="equipTitle('${tid}')" class="bg-white/5 p-3 rounded mb-2 flex justify-between items-center border-l-2 rarity-${meta.rarity}"><div><span class="font-bold text-sm block">${meta.name}</span><span class="text-[9px] opacity-50">${t('owned_by')}: ${pct}%</span></div>${dbUser.active_title === tid ? '<i class="fas fa-check text-green-500"></i>' : ''}</div>`;
+                    invList.innerHTML += `<div onclick="equipTitle('${tid}')" class="bg-white/5 p-3 rounded mb-2 flex justify-between items-center border-l-2 rarity-${meta.rarity}"><div><span class="font-bold text-sm block">${meta.name}</span><span class="text-[9px] opacity-50">${t('owned_by')}: ${pct}%</span></div>${actives.includes(tid) ? '<i class="fas fa-check text-green-500"></i>' : ''}</div>`;
                 }
             });
         }
 
         window.equipTitle = async (tid) => {
             if(checkSpam()) return;
-            await update(ref(db, `users/${user.id}`), { active_title: tid });
-            alert(t('equipped'));
+            let current = Array.isArray(dbUser.active_titles) ? dbUser.active_titles : (dbUser.active_title ? [dbUser.active_title] : []);
+            
+            if (current.includes(tid)) {
+                // UNEQUIP
+                current = current.filter(id => id !== tid);
+            } else {
+                // EQUIP (Max 3)
+                if (current.length >= 3) return alert("MAX 3 TITLES");
+                current.push(tid);
+            }
+            
+            // REMOVE OLD FIELD SUPPORT
+            await update(ref(db, `users/${user.id}`), { active_titles: current, active_title: null });
         };
 
         window.toggleAdmin = () => document.getElementById('admin-curtain').classList.toggle('active');
@@ -722,12 +756,10 @@
             const gems = document.getElementById('adm-prize-gems').value;
             const size = document.getElementById('adm-team-size').value;
             if(!format || (!rbx && !gems)) return alert("Fill fields");
-            
             let prizeStr = "";
             if(rbx) prizeStr += `${rbx} RBX`;
             if(rbx && gems) prizeStr += " + ";
             if(gems) prizeStr += `${gems} 💎`;
-
             const tid = push(ref(db, 'tournaments')).key;
             await set(ref(db, `tournaments/${tid}`), { id: tid, format: format, prize: prizeStr, team_size: parseInt(size), mode: parseInt(size), active: true });
             alert(t('created'));
