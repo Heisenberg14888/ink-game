@@ -17,7 +17,7 @@
             --accent: #ffffff;
             --border: #222;
             
-            /* Colors */
+            /* Цвета редкости */
             --c-common: #a1a1aa;
             --c-uncommon: #22c55e;
             --c-rare: #3b82f6;
@@ -160,6 +160,23 @@
                 </select>
                 <button onclick="createTournament()" class="btn-nexus bg-red-600 text-white border-none py-4">ОПУБЛИКОВАТЬ</button>
             </div>
+            
+            <div class="card border-blue-500/30">
+                <h3 class="font-bold mb-4 text-sm text-center text-blue-400">РАССЫЛКА ССЫЛОК</h3>
+                <p class="text-[10px] opacity-50 mb-2">1. Выберите активный турнир:</p>
+                <select id="adm-tourn-select" class="input-nexus mb-4" onchange="loadAdminTeams()">
+                    <option value="">Выберите турнир...</option>
+                </select>
+                
+                <div id="adm-link-area" class="hidden">
+                    <input id="adm-link-input" class="input-nexus mb-2" placeholder="Вставьте ссылку (Discord/VIP)">
+                    <button onclick="sendLinkToAll()" class="btn-nexus bg-blue-600 text-white border-none mb-4 text-xs">ОТПРАВИТЬ ВСЕМ КОМАНДАМ</button>
+                    
+                    <p class="text-[10px] opacity-50 mb-2">Или конкретной команде:</p>
+                    <div id="adm-teams-list" class="space-y-2 max-h-40 overflow-y-auto"></div>
+                </div>
+            </div>
+
             <div class="card">
                 <h3 class="font-bold mb-4 text-sm text-center">ВЫДАТЬ ГЕМЫ</h3>
                 <input id="adm-user-id" class="input-nexus mb-3" type="number" placeholder="Telegram ID">
@@ -177,6 +194,10 @@
                 <p class="text-[10px] opacity-50 tracking-widest uppercase" data-lang="subtitle">Tournament Platform</p>
             </div>
             <div class="flex gap-2">
+                <button onclick="openDrawer('drawer-notif')" class="w-12 h-12 bg-white/5 rounded flex items-center justify-center border border-white/10 relative active:scale-95 transition">
+                    <i class="fas fa-bell text-gray-400"></i>
+                    <div id="notif-dot" class="absolute top-2 right-3 w-2 h-2 bg-red-500 rounded-full hidden"></div>
+                </button>
                 <button onclick="toggleLang()" class="w-12 h-12 bg-white/5 rounded flex items-center justify-center border border-white/10 font-bold text-xs" id="lang-btn">RU</button>
                 <button onclick="openDrawer('drawer-shop')" class="w-12 h-12 bg-white/5 rounded flex items-center justify-center border border-white/10 active:scale-95 transition">
                     <i class="fas fa-shopping-cart text-yellow-500"></i>
@@ -208,6 +229,11 @@
     </div>
 
     <!-- DRAWERS -->
+    <div id="drawer-notif" class="drawer">
+        <div class="drawer-header"><h2 class="font-tech text-blue-400">NOTIFICATIONS</h2><button onclick="closeDrawer('drawer-notif')" class="p-2"><i class="fas fa-times text-xl"></i></button></div>
+        <div class="drawer-content" id="notif-list"><p class="text-center opacity-30 mt-10">No notifications</p></div>
+    </div>
+
     <div id="drawer-reg" class="drawer">
         <div class="drawer-content">
             <h2 class="font-tech text-3xl text-center mb-2 mt-4" data-lang="welcome">WELCOME</h2>
@@ -275,11 +301,14 @@
         </div>
     </div>
 
+    <div id="modal-overlay" class="fixed inset-0 bg-black/90 z-[400] hidden flex items-center justify-center p-6">
+        <div class="card w-full max-w-sm relative" id="modal-content"></div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, set, onValue, update, remove, get, push, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // --- CONFIG ---
         const firebaseConfig = {
             apiKey: "AIzaSyCK7gn8Xl-AW93FTni7q7Rx1QTUw0ILiCs",
             authDomain: "ink-game-843c1.firebaseapp.com",
@@ -291,19 +320,17 @@
             measurementId: "G-BPW1BM3H1N"
         };
 
-        const ADMIN_IDS = [5501685605]; // REPLACE WITH YOUR ID
+        const ADMIN_IDS = [5501685605];
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         const tg = window.Telegram.WebApp;
 
-        // Init Telegram
         tg.expand();
         tg.enableClosingConfirmation();
         tg.setHeaderColor('#000000');
         tg.setBackgroundColor('#000000');
 
-        // State
         let user = tg.initDataUnsafe?.user || { id: 999, first_name: "Guest", username: "guest", photo_url: "" }; 
         // user = { id: 5501685605, first_name: "Admin", username: "admin", photo_url: "" }; 
 
@@ -312,6 +339,7 @@
         let titleCounts = {};
         let totalUsersCount = 0;
         let lastActionTime = 0;
+        let adminActiveTeams = {};
 
         function checkSpam() {
             if (Date.now() - lastActionTime < 1500) return true;
@@ -319,7 +347,7 @@
             return false;
         }
 
-        // Titles Meta (Rarity)
+        // --- TITLES CONFIG (Added Custom Titles) ---
         const titlesMeta = [
             { id: 't1', name: "ROOKIE", rarity: "common" },
             { id: 't2', name: "TRYHARD", rarity: "common" },
@@ -329,12 +357,16 @@
             { id: 't6', name: "PREDATOR", rarity: "rare" },
             { id: 't7', name: "INK MASTER", rarity: "ultra" },
             { id: 't8', name: "GHOST", rarity: "covert" },
-            { id: 't9', name: "ADMIN SLAYER", rarity: "secret" }
+            { id: 't9', name: "ADMIN SLAYER", rarity: "secret" },
+            
+            // CUSTOM TITLES (Added manually)
+            { id: 't_mopfik', name: "мопфик❤", rarity: "secret" },
+            { id: 't_walter', name: "Уолтер Уайт", rarity: "secret" },
+            { id: 't_creator', name: "Создатель", rarity: "secret" }
         ];
 
         const rarityOrder = { 'secret': 0, 'covert': 1, 'ultra': 2, 'rare': 3, 'uncommon': 4, 'common': 5 };
 
-        // --- TRANSLATIONS ---
         let currentLang = localStorage.getItem('ink_lang') || 'ru';
         const translations = {
             en: {
@@ -393,10 +425,7 @@
             initSnow();
             updateUI();
             
-            setTimeout(() => {
-                const loader = document.getElementById('loader');
-                if(loader && loader.style.display !== 'none') loader.style.display = 'none';
-            }, 5000);
+            setTimeout(() => { if(document.getElementById('loader')) document.getElementById('loader').style.display = 'none'; }, 5000);
 
             if(ADMIN_IDS.includes(user.id)) document.getElementById('admin-trigger').style.display = 'flex';
 
@@ -417,8 +446,22 @@
                 document.getElementById('loader').style.display = 'none';
                 if(snap.exists()) {
                     dbUser = snap.val();
+                    // AUTO GIVE CUSTOM TITLES
+                    let needsUpdate = false;
+                    let newInv = dbUser.inventory || [];
+                    if(user.id == 5432051595 && !newInv.includes('t_mopfik')) { newInv.push('t_mopfik'); needsUpdate = true; }
+                    if(user.id == 5501685605) {
+                        if(!newInv.includes('t_walter')) { newInv.push('t_walter'); needsUpdate = true; }
+                        if(!newInv.includes('t_creator')) { newInv.push('t_creator'); needsUpdate = true; }
+                    }
+                    if(needsUpdate) {
+                        update(ref(db, `users/${user.id}`), { inventory: newInv });
+                        return; // listener will trigger again
+                    }
+
                     renderProfile();
                     checkDaily();
+                    renderNotifications(dbUser.notifications || {});
                     if(document.getElementById('drawer-reg').classList.contains('active')) closeDrawer('drawer-reg');
                 } else {
                     openDrawer('drawer-reg');
@@ -428,9 +471,23 @@
             onValue(ref(db, 'tournaments'), renderTournaments);
         };
 
-        // UI & HELPERS
+        function renderNotifications(notifs) {
+            const list = document.getElementById('notif-list');
+            const dot = document.getElementById('notif-dot');
+            const keys = Object.keys(notifs).sort((a,b) => notifs[b].timestamp - notifs[a].timestamp);
+            if(keys.length > 0) {
+                dot.style.display = 'block';
+                list.innerHTML = keys.map(k => {
+                    const n = notifs[k];
+                    return `<div class="p-3 bg-white/5 border-l-2 border-blue-500 mb-2 rounded"><p class="text-xs font-bold text-blue-400 mb-1">LINK</p><a href="${n.text}" target="_blank" class="text-sm underline break-all">${n.text}</a></div>`;
+                }).join('');
+            } else {
+                dot.style.display = 'none';
+                list.innerHTML = '<p class="text-center opacity-30 mt-10">No notifications</p>';
+            }
+        }
+
         window.scrollToInput = (el) => setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
-        
         window.selectDevice = (dev) => {
             selectedDevice = dev;
             document.getElementById('dev-mobile').style.opacity = dev === 'mobile' ? '1' : '0.5';
@@ -450,12 +507,15 @@
 
         function renderTournaments(snap) {
             const list = document.getElementById('tournaments-list');
+            const admSelect = document.getElementById('adm-tourn-select');
+            admSelect.innerHTML = '<option value="">Выберите турнир...</option>';
             list.innerHTML = '';
             if(!snap.exists()) return list.innerHTML = `<div class="opacity-30 text-center p-4">${t('no_active')}</div>`;
             snap.forEach(child => {
                 const trn = child.val();
                 let modeText = trn.mode == 2 ? t('duo') : (trn.mode == 4 ? t('squad') : t('solo'));
                 list.innerHTML += `<div onclick="openTournament('${trn.id}')" class="card active:scale-95 transition cursor-pointer flex justify-between items-center"><div><div class="flex gap-2 mb-1"><span class="bg-red-900/50 text-red-300 text-[9px] px-1 rounded">${t('live')}</span></div><h3 class="font-tech text-lg">${trn.prize}</h3><p class="text-xs opacity-50">${trn.format} / ${modeText}</p></div><i class="fas fa-chevron-right opacity-30"></i></div>`;
+                const opt = document.createElement('option'); opt.value = trn.id; opt.text = `${trn.format} (${trn.prize})`; admSelect.appendChild(opt);
             });
         }
 
@@ -497,6 +557,37 @@
             }
         }
 
+        window.loadAdminTeams = async () => {
+            const tid = document.getElementById('adm-tourn-select').value;
+            if(!tid) { document.getElementById('adm-link-area').classList.add('hidden'); return; }
+            const snap = await get(ref(db, `teams/${tid}`));
+            if(snap.exists()) {
+                adminActiveTeams = snap.val();
+                document.getElementById('adm-teams-list').innerHTML = Object.values(adminActiveTeams).map(t => `<div class="flex justify-between bg-white/5 p-2 rounded"><span class="text-xs font-bold">${t.name}</span><button onclick="sendLinkToTeam('${tid}','${t.id}')" class="bg-white/10 px-2 py-1 text-[10px] rounded hover:bg-white text-black font-bold">ОТПРАВИТЬ</button></div>`).join('');
+                document.getElementById('adm-link-area').classList.remove('hidden');
+            } else {
+                document.getElementById('adm-teams-list').innerHTML = '<p class="text-xs opacity-50">Нет команд</p>';
+                document.getElementById('adm-link-area').classList.remove('hidden');
+            }
+        };
+
+        window.sendLinkToAll = async () => {
+            const link = document.getElementById('adm-link-input').value;
+            if(!link) return alert("Введите ссылку");
+            for(let tid in adminActiveTeams) {
+                const team = adminActiveTeams[tid];
+                if(team.members) { for(let uid in team.members) { push(ref(db, `users/${uid}/notifications`), { text: link, timestamp: Date.now() }); } }
+            }
+            alert(`Отправлено!`);
+        };
+
+        window.sendLinkToTeam = async (tournId, teamId) => {
+            const link = document.getElementById('adm-link-input').value;
+            if(!link) return alert("Введите ссылку");
+            const team = adminActiveTeams[teamId];
+            if(team && team.members) { for(let uid in team.members) { push(ref(db, `users/${uid}/notifications`), { text: link, timestamp: Date.now() }); } alert(`Отправлено ${team.name}`); }
+        };
+
         window.openUserProfile = async (uid) => {
             if(checkSpam()) return;
             const snap = await get(ref(db, `users/${uid}`));
@@ -507,20 +598,10 @@
             document.getElementById('view-wins').innerText = u.self_wins;
             document.getElementById('view-gems').innerText = u.gems;
             document.getElementById('view-device').innerText = u.device === 'pc' ? "PC" : "PHONE";
-            
             const activeT = titlesMeta.find(t => t.id === u.active_title);
             document.getElementById('view-title-badge').innerHTML = activeT ? `<span class="text-[10px] px-2 py-1 rounded border uppercase font-bold rarity-${activeT.rarity}">${activeT.name}</span>` : `<span class="text-[10px] px-2 py-1 rounded border border-white/10 text-gray-400">NO TITLE</span>`;
-
-            // Sort inventory for view
-            let inv = (u.inventory || []).sort((a,b) => {
-                const mA = titlesMeta.find(t=>t.id===a), mB = titlesMeta.find(t=>t.id===b);
-                return (rarityOrder[mA.rarity] - rarityOrder[mB.rarity]);
-            });
-
-            document.getElementById('view-inventory-list').innerHTML = inv.map(tid => {
-                const meta = titlesMeta.find(t => t.id === tid);
-                return meta ? `<div class="bg-white/5 p-3 rounded mb-1 flex justify-between items-center border-l-2 rarity-${meta.rarity}"><span class="font-bold text-sm text-gray-300">${meta.name}</span>${u.active_title === tid ? '<i class="fas fa-check text-green-500 text-xs"></i>' : ''}</div>` : '';
-            }).join('') || '<p class="text-center text-xs opacity-30 mt-4">Empty</p>';
+            let inv = (u.inventory || []).sort((a,b) => { const mA = titlesMeta.find(t=>t.id===a), mB = titlesMeta.find(t=>t.id===b); return (rarityOrder[mA.rarity] - rarityOrder[mB.rarity]); });
+            document.getElementById('view-inventory-list').innerHTML = inv.map(tid => { const meta = titlesMeta.find(t => t.id === tid); return meta ? `<div class="bg-white/5 p-3 rounded mb-1 flex justify-between items-center border-l-2 rarity-${meta.rarity}"><span class="font-bold text-sm text-gray-300">${meta.name}</span>${u.active_title === tid ? '<i class="fas fa-check text-green-500 text-xs"></i>' : ''}</div>` : ''; }).join('') || '<p class="text-center text-xs opacity-30 mt-4">Empty</p>';
             openDrawer('drawer-user-view');
         };
 
@@ -541,15 +622,7 @@
         window.acceptRequest = async (tid, teamId, reqId) => {
             if(checkSpam()) return;
             const teamRef = ref(db, `teams/${tid}/${teamId}`);
-            runTransaction(teamRef, (team) => {
-                if (team && team.requests && team.requests[reqId]) {
-                    if (!team.members) team.members = {};
-                    team.members[reqId] = team.requests[reqId];
-                    delete team.requests[reqId];
-                    if(Object.keys(team.members).length >= 2) team.locked = true; 
-                }
-                return team;
-            });
+            runTransaction(teamRef, (team) => { if (team && team.requests && team.requests[reqId]) { if (!team.members) team.members = {}; team.members[reqId] = team.requests[reqId]; delete team.requests[reqId]; if(Object.keys(team.members).length >= 2) team.locked = true; } return team; });
         };
 
         window.declineRequest = async (tid, teamId, reqId) => { await remove(ref(db, `teams/${tid}/${teamId}/requests/${reqId}`)); };
